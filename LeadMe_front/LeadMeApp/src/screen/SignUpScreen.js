@@ -10,7 +10,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 
-const SignUpScreen = () => {
+const SignUpScreen = ({navigation}) => {
   const [userId, setUserId] = useState('');
   const [idChecked, setIdChecked] = useState(null); // null, true, false
   const [password, setPassword] = useState('');
@@ -129,6 +129,7 @@ const SignUpScreen = () => {
           <Picker.Item label="성인: 20세 이상" value="30" />
         </Picker>
       </View>
+      
 
       {/* 모든 입력 오류 */}
       {errors.general ? <Text style={styles.error}>{errors.general}</Text> : null}
@@ -139,15 +140,23 @@ const SignUpScreen = () => {
       </TouchableOpacity>
 
       {/* 뒤로 가기 버튼 (동작 연결은 필요시 navigation 추가) */}
-      <TouchableOpacity style={styles.backBtn}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Login')}>
         <Text style={styles.backText}>뒤로 가기</Text>
       </TouchableOpacity>
+      
+    
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 24, alignItems: 'center', backgroundColor: '#FFF6EB' },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF6EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
   title: { fontSize: 20, fontWeight: 'bold', color: '#8E44AD', marginTop: 40 },
   heading: { fontSize: 24, fontWeight: 'bold', marginVertical: 16 },
   row: {
