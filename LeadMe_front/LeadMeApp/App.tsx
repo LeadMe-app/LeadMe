@@ -5,7 +5,7 @@ import SignUpScreen from './src/screen/SignUpScreen';
 import LoginScreen from './src/screen/LoginScreen';
 import EditProfileScreen from './src/screen/EditProfileScreen';
 import SignUpSuccess from './src/screen/SignUpSuccess';
-
+import BackButton from './src/components/BackButton';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -16,6 +16,7 @@ export default function App() {
         <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} options = {{headerShown: false}} />
         <Stack.Screen name="SignUpSuccess" component={SignUpSuccess} options = {{headerShown: false}}/>
+        <Stack.Screen name="BackButton" component={BackButton} options = {{headerShown: false}}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
