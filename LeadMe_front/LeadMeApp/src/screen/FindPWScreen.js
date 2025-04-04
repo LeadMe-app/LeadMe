@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     StyleSheet,
   } from 'react-native';
+import BackButton from "../components/BackButton";
 
 const FindPWScreen = ({ navigation }) => {
   const [userId, setUserId] = useState("");
@@ -36,9 +37,7 @@ const FindPWScreen = ({ navigation }) => {
         {/* 비밀번호 찾기 실패 */}
         {message ? <Text style={styles.message}>{message}</Text> : null}
         
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>뒤로 가기</Text>
-        </TouchableOpacity>
+        <BackButton />
         </View>
     );
 };
@@ -88,17 +87,5 @@ const styles = StyleSheet.create({
     message: { 
         color: "red", 
         marginTop: 15, 
-    },
-    backBtn: {
-        backgroundColor: '#2ECC71',
-        padding: 14,
-        width: '100%',
-        borderRadius: 12,
-        marginTop: 20,
-        alignItems: 'center',
-      },
-    backText: {
-        color: '#fff',
-        fontWeight: 'bold',
     },
 });

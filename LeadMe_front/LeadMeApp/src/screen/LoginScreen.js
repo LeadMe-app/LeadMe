@@ -26,6 +26,7 @@ const LoginScreen = ({ navigation }) => {
     <View style={styles.container}>
       <Text style={styles.title}>LEAD ME</Text>
 
+      {/* 아이디 입력 */}
       <TextInput
         placeholder="아이디를 입력하세요"
         value={userId}
@@ -33,6 +34,7 @@ const LoginScreen = ({ navigation }) => {
         style={styles.input}
       />
 
+      {/* 비밀번호 입력 */}
       <TextInput
         placeholder="비밀번호를 입력하세요"
         secureTextEntry
@@ -41,6 +43,7 @@ const LoginScreen = ({ navigation }) => {
         style={styles.input}
       />
 
+      {/* 에러 메시지 */}
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>

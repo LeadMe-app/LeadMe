@@ -5,8 +5,9 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
-    Modal,
   } from 'react-native';
+import SuccessModal from "../components/SuccessModal";
+import BackButton from "../components/BackButton";
 
 const ResetPWScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
@@ -15,7 +16,7 @@ const ResetPWScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const resetPW = () => {
-    if (password === confirmPW) { 
+    if (password && password === confirmPW) { 
         setModalVisible(true);
     } else {
       setMessage("비밀번호가 일치하지 않습니다.");
@@ -35,26 +36,20 @@ const ResetPWScreen = ({ navigation }) => {
             <Text style={styles.buttonText}>비밀번호 변경</Text>
         </TouchableOpacity>
 
-        {/* 비밀번호 변경 성공 시 -> 팝업 */}
-        <Modal transparent={true} visible={modalVisible} animationType="slide">
-            <View style={styles.modalContainer}>
-                <View style={styles.modalView}>
-                    <Text style={styles.modalText}>비밀번호 변경 완료</Text>
-                    <Text>비밀번호가 성공적으로 변경되었습니다.</Text>
-                    <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Login")}>
-                        <Text style={styles.buttonText}>로그인</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+        {/* 성공 모달 */}
+       <SuccessModal
+        visible={modalVisible}
+        onClose={() => {
+          setModalVisible(false);
+          navigation.navigate("Login"); // 로그인 페이지 이동
+        }}
+      />
     
        {/* 변경 실패 -> 에러 메시지 */}
        {message ? <Text style={styles.message}>{message}</Text> : null}
 
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>뒤로 가기</Text>
-        </TouchableOpacity>
-        </View>
+       <BackButton />
+       </View>
     );
 };
 
@@ -103,40 +98,5 @@ const styles = StyleSheet.create({
     message: { 
         color: "red", 
         marginTop: 15, 
-    },
-    modalContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "rgba(0, 0, 0, 0.5)", // 반투명 배경
-    },
-    modalView: {
-        width: "80%",
-        backgroundColor: "#FFF",
-        borderRadius: 10,
-        padding: 20,
-        alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5, // 안드로이드 그림자 효과
-    },
-    modalText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 10,
-    },
-    backBtn: {
-        backgroundColor: '#2ECC71',
-        padding: 14,
-        width: '100%',
-        borderRadius: 12,
-        marginTop: 20,
-        alignItems: 'center',
-      },
-    backText: {
-        color: '#fff',
-        fontWeight: 'bold',
     },
 });

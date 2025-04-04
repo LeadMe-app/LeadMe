@@ -6,6 +6,9 @@ import LoginScreen from './src/screen/LoginScreen';
 import FindIDScreen from './src/screen/FindIDScreen';
 import FindPWScreen from './src/screen/FindPWScreen';
 import ResetPWScreen from './src/screen/ResetPWScreen';
+import EditProfileScreen from './src/screen/EditProfileScreen';
+import SignUpSuccess from './src/screen/SignUpSuccess';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -17,6 +20,8 @@ export default function App() {
         <Stack.Screen name="FindID" component={FindIDScreen} options={{headerShown : false}} />
         <Stack.Screen name="FindPW" component={FindPWScreen} options={{headerShown : false}} />
         <Stack.Screen name="ResetPW" component={ResetPWScreen} options={{headerShown : false}} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} options = {{headerShown: false}} />
+        <Stack.Screen name="SignUpSuccess" component={SignUpSuccess} options = {{headerShown: false}}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

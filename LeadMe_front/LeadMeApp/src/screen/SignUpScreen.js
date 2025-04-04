@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
+import BackButton from '../components/BackButton';
 
 const SignUpScreen = ({navigation}) => {
   const [userId, setUserId] = useState('');
@@ -140,9 +141,7 @@ const SignUpScreen = ({navigation}) => {
       </TouchableOpacity>
 
       {/* 뒤로 가기 버튼 (동작 연결은 필요시 navigation 추가) */}
-      <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.backText}>뒤로 가기</Text>
-      </TouchableOpacity>
+      <BackButton />
       
     
     </ScrollView>
@@ -207,18 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   submitText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  backBtn: {
-    backgroundColor: '#2ECC71',
-    padding: 14,
-    width: '100%',
-    borderRadius: 12,
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  backText: {
     color: '#fff',
     fontWeight: 'bold',
   },

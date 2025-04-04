@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import BackButton from '../components/BackButton';
 
 const EditProfileScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
@@ -76,12 +77,7 @@ const EditProfileScreen = ({ navigation }) => {
         <Text style={styles.applyText}>적용</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.backText}>뒤로 가기</Text>
-      </TouchableOpacity>
+      <BackButton />
     </View>
   );
 };
@@ -131,17 +127,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   applyText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  backBtn: {
-    backgroundColor: '#47C466',
-    paddingVertical: 14,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  backText: {
     color: '#fff',
     fontWeight: 'bold',
   },
