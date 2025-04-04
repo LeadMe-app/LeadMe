@@ -48,8 +48,12 @@ const LoginScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.linkContainer}>
-        <Text style={styles.linkText}>아이디 찾기</Text>
-        <Text style={styles.linkText}>비밀번호 찾기</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('FindID')}>
+          <Text style={styles.linkText}>아이디 찾기</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('FindPW')}>
+          <Text style={styles.linkText}>비밀번호 찾기</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
           <Text style={styles.linkText}>회원가입</Text>
         </TouchableOpacity>
@@ -131,4 +135,4 @@ const styles = StyleSheet.create({
   },
 });
 
-
+export default LoginScreen;

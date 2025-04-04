@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     padding: 14,
     width: '100%',
     borderRadius: 12,
-    marginTop: 12,
+    marginTop: 15,
     alignItems: 'center',
   },
   backText: {
