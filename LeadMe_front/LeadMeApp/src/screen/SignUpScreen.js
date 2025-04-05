@@ -125,9 +125,9 @@ const SignUpScreen = ({navigation}) => {
           style={styles.dropdown}
         >
           <Picker.Item label="연령대를 선택하세요." value="" />
-          <Picker.Item label="어린이: 5 ~ 12세" value="10" />
-          <Picker.Item label="청소년: 13세 ~ 19세" value="15" />
-          <Picker.Item label="성인: 20세 이상" value="30" />
+          <Picker.Item label="어린이: 5 ~ 12세" value="5-12" />
+          <Picker.Item label="청소년: 13세 ~ 19세" value="13-19" />
+          <Picker.Item label="성인: 20세 이상" value="20" />
         </Picker>
       </View>
       
