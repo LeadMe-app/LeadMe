@@ -8,8 +8,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import axios from 'axios';
+//import axios from 'axios';
 import BackButton from '../components/BackButton';
+import axiosInstance from '../config/axiosInstance';
 
 const SignUpScreen = ({navigation}) => {
   const [userId, setUserId] = useState('');
@@ -25,14 +26,30 @@ const SignUpScreen = ({navigation}) => {
     general: '',
   });
 
-  const checkIdDuplicate = () => {
-    // 예시: 이미 존재하는 아이디 "test"
-    if (userId.trim() === 'test') {
-      setIdChecked(false);
-      setErrors((prev) => ({ ...prev, userId: '이미 존재하는 아이디입니다.' }));
-    } else {
-      setIdChecked(true);
-      setErrors((prev) => ({ ...prev, userId: '' }));
+  const checkIdDuplicate = async () => {
+    if (!userId.trim()) {
+      setErrors((prev) => ({ ...prev, userId: '아이디를 입력해주세요.' }));
+      return;
+    }
+  
+    try {
+      const response = await axiosInstance.post('/api/auth/check-username', {
+        username: userId.trim() 
+      });
+  
+      if (response.data.available === false) {
+        setIdChecked(false);
+        setErrors((prev) => ({ ...prev, userId: '이미 존재하는 아이디입니다.' }));
+      } else {
+        setIdChecked(true);
+        setErrors((prev) => ({ ...prev, userId: '' }));
+      }
+    } catch (error) {
+      console.error('아이디 중복 확인 에러:', error);
+      setErrors((prev) => ({
+        ...prev,
+        userId: '아이디 중복 확인 중 오류가 발생했습니다.',
+      }));
     }
   };
 
@@ -45,6 +62,11 @@ const SignUpScreen = ({navigation}) => {
       valid = false;
     }
 
+    if (!idChecked) {
+      newErrors.userId = '아이디 중복 확인을 해주세요.';
+      valid = false;
+    }
+
     if (password !== confirmPw) {
       newErrors.password = '비밀번호가 일치하지 않습니다.';
       valid = false;
@@ -54,10 +76,11 @@ const SignUpScreen = ({navigation}) => {
 
     if (valid) {
       try {
-        const res = await axios.post('https://10.0.2.2:8000/api/auth/register', {
+        const res = await axiosInstance.post('/api/auth/register', {
           username: userId,
           password: password,
           phone_number: phone,
+          // nickname은...?
           age_group: age,
         });
         console.log('회원가입 성공:', res.data);
@@ -84,6 +107,10 @@ const SignUpScreen = ({navigation}) => {
           placeholder="아이디"
           value={userId}
           onChangeText={setUserId}
+          /* onChangeText={(text) => {
+            setUserId(text);
+            setIdChecked(null); // ✅ 아이디 바뀌면 중복확인 초기화
+          }} */
           style={styles.inputWithButton}
         />
         <TouchableOpacity style={styles.checkBtn} onPress={checkIdDuplicate}>
@@ -128,6 +155,10 @@ const SignUpScreen = ({navigation}) => {
         placeholder="전화번호"
         value={phone}
         onChangeText={setPhone}
+        /* onChangeText={(text) => {
+          const onlyNums = text.replace(/[^0-9]/g, '');
+          setPhone(onlyNums);
+          }} 숫자 필터링 */
         keyboardType="phone-pad"
         style={styles.input}
       />
