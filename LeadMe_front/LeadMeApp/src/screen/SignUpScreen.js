@@ -36,7 +36,7 @@ const SignUpScreen = ({navigation}) => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     let valid = true;
     let newErrors = { userId: '', password: '', general: '' };
 
@@ -53,8 +53,23 @@ const SignUpScreen = ({navigation}) => {
     setErrors(newErrors);
 
     if (valid) {
-      console.log('회원가입 완료!');
-      // TODO: 회원가입 API 요청 처리
+      try {
+        const res = await axios.post('https://10.0.2.2:8000/api/auth/register', {
+          username: userId,
+          password: password,
+          phone_number: phone,
+          age_group: age,
+        });
+        console.log('회원가입 성공:', res.data);
+        navigation.navigate('SignUpSuccess', {nickname});
+
+      }catch (err) {
+        console.error(err.response?.data || err);
+        setErrors((prev) => ({
+          ...prev,
+          general: '회원가입에 실패하였습니다. 입력 내용을 다시 한 번 확인해주세요.',
+        }));
+      }
     }
   };
 
