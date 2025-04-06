@@ -6,20 +6,49 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import axios from 'axios';
+import axiosInstance from '../config/axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // 토큰 저장
+import qs from 'qs'; // form
 
 const LoginScreen = ({ navigation }) => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  const handleLogin = () => {
+  const [errors, setErrors] = useState({
+    userId: '',
+    password: '',
+    general: '',
+  });
+   {/*로그인 시도*/}
+   const handleLogin = async () => {
     if (!userId || !password) {
-      setError('아이디 및 비밀번호를 다시 확인해주세요.');
-    } else {
-      setError('');
-      console.log('로그인 시도:', userId, password);
-      // TODO: 로그인 API 요청 처리
+      setErrors({ general: '모든 정보를 입력해주세요.' }); // 사라지게 하는 방법
+      return;
+    }
+  
+    try {
+      const requestBody = qs.stringify({
+        username: userId,
+        password: password,
+      });
+      const res = await axiosInstance.post('/api/auth/login', requestBody,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded', 
+          },
+        });
+      const { access_token } = res.data;
+
+      {/* 로그인 성공 시 토큰 저장 */}
+      await AsyncStorage.setItem('access_token', access_token);
+      console.log('로그인 성공 및 토큰 저장 완료!', res.data);
+      //navigation.navigate('EditProfileScreen'); 이동 구현 필요
+    } catch (err) {
+      console.error('로그인 실패:', err.response?.data || err);
+      console.log(
+        "보내는 값:", 
+        new URLSearchParams({ username: userId, password: password }).toString()
+      );
+      setErrors({ general: '로그인에 실패했습니다. 정보를 확인해주세요.' });
     }
   };
 
@@ -45,7 +74,7 @@ const LoginScreen = ({ navigation }) => {
       />
 
       {/* 에러 메시지 */}
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {errors.general ? <Text style={styles.errorText}>{errors.general}</Text> : null}
 
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginButtonText}>로그인</Text>

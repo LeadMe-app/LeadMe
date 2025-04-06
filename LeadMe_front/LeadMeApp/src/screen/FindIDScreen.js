@@ -7,19 +7,36 @@ import {
     StyleSheet,
   } from 'react-native';
 import BackButton from "../components/BackButton";
+import axiosInstance from "../config/axiosInstance";
 
 const FindIDScreen = ({ navigation }) => {
-  const [name, setName] = useState("");
+  const [nickname, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(""); // 아이디 보여주기
 
-  const findID = () => {
-    if (name === "na" && phone === "1234") { // 조회 구현 필요
-      setMessage("아이디는 user123 입니다.");
-    } else {
-      setMessage("회원정보가 존재하지 않습니다.");
+  const findID = async () => {
+    if (!nickname || !phone){
+        setMessage("모든 정보를 입력해주세요.");
+        return;
     }
-  };
+    try {
+        const res = await axiosInstance.post("/api/auth/find-username", {
+          nickname: nickname,
+          phone_number: phone,
+        },
+        {
+            headers: {
+              'Content-Type': 'application/json', 
+            },
+          });
+  
+        const { username } = res.data;
+        setMessage(`아이디는 ${username} 입니다.`);
+      } catch (err) {
+        console.error("아이디 찾기 실패:", err.response?.data || err);
+        setMessage("회원정보가 존재하지 않습니다.");
+      }
+    };
 
   return (
     <View style={styles.container}>
@@ -27,16 +44,15 @@ const FindIDScreen = ({ navigation }) => {
         <Text style={styles.header}>아이디 찾기</Text>
         
         {/* 이름, 전화번호 입력 */}
-        <TextInput style={styles.input} placeholder="이름" value={name} onChangeText={setName} />
+        <TextInput style={styles.input} placeholder="이름" value={nickname} onChangeText={setName} />
         <TextInput style={styles.input} placeholder="전화번호" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
         
+        {message ? <Text style={styles.message}>{message}</Text> : null}
+
         <TouchableOpacity style={styles.button} onPress={findID}>
             <Text style={styles.buttonText}>아이디 찾기</Text>
         </TouchableOpacity>
 
-        {/* 아이디 찾기 실패 */}
-        {message ? <Text style={styles.message}>{message}</Text> : null}
-        
         <BackButton />
         </View>
     );

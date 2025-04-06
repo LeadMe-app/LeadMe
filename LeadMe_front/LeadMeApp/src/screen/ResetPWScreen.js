@@ -8,18 +8,39 @@ import {
   } from 'react-native';
 import SuccessModal from "../components/SuccessModal";
 import BackButton from "../components/BackButton";
+import axiosInstance from "../config/axiosInstance";
 
-const ResetPWScreen = ({ navigation }) => {
-  const [password, setPassword] = useState("");
-  const [confirmPW, setConfirmPW] = useState("");
-  const [message, setMessage] = useState("");
+const ResetPWScreen = ({ route, navigation }) => {
+  const { username, phone_number } = route.params;
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const resetPW = () => {
-    if (password && password === confirmPW) { 
-        setModalVisible(true);
-    } else {
+  const handleResetPassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      setMessage("비밀번호를 모두 입력해주세요.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
       setMessage("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    try {
+      const res = await axiosInstance.post("/api/auth/reset-password", {
+        username: username,
+        new_password: newPassword,
+        new_password_confirm : confirmPassword,
+      });
+
+      console.log("비밀번호 재설정 성공:", res.data);
+      setMessage("비밀번호가 성공적으로 재설정되었습니다.");
+      setModalVisible(true);
+    } catch (err) {
+      console.error("비밀번호 재설정 실패:", err.response?.data || err);
+      setMessage("비밀번호 재설정 중 오류가 발생했습니다.");
     }
   };
 
@@ -29,12 +50,14 @@ const ResetPWScreen = ({ navigation }) => {
         <Text style={styles.header}>비밀번호 변경</Text>
 
         {/* 비밀번호 입력 */}
-        <TextInput style={styles.input} placeholder="비밀번호" value={password} onChangeText={setPassword} />
-        <TextInput style={styles.input} placeholder="비밀번호 재확인" value={confirmPW} onChangeText={setConfirmPW} />
+        <TextInput style={styles.input} placeholder="비밀번호" value={newPassword} onChangeText={setNewPassword} />
+        <TextInput style={styles.input} placeholder="비밀번호 재확인" value={confirmPassword} onChangeText={setConfirmPassword} />
         
-        <TouchableOpacity style={styles.button} onPress={resetPW}>
+        <TouchableOpacity style={styles.button} onPress={handleResetPassword}>
             <Text style={styles.buttonText}>비밀번호 변경</Text>
         </TouchableOpacity>
+
+        {message ? <Text style={styles.message}>{message}</Text> : null}
 
         {/* 성공 모달 */}
        <SuccessModal
@@ -45,8 +68,6 @@ const ResetPWScreen = ({ navigation }) => {
         }}
       />
     
-       {/* 변경 실패 -> 에러 메시지 */}
-       {message ? <Text style={styles.message}>{message}</Text> : null}
 
        <BackButton />
        </View>

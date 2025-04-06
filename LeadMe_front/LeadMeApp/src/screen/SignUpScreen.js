@@ -26,6 +26,7 @@ const SignUpScreen = ({navigation}) => {
     general: '',
   });
 
+  {/* 아이디 중복확인 */}
   const checkIdDuplicate = async () => {
     if (!userId.trim()) {
       setErrors((prev) => ({ ...prev, userId: '아이디를 입력해주세요.' }));
@@ -53,6 +54,7 @@ const SignUpScreen = ({navigation}) => {
     }
   };
 
+  {/*회원가입 시도 */}
   const handleSubmit = async () => {
     let valid = true;
     let newErrors = { userId: '', password: '', general: '' };
@@ -79,15 +81,24 @@ const SignUpScreen = ({navigation}) => {
         const res = await axiosInstance.post('/api/auth/register', {
           username: userId,
           password: password,
+          password_confirm : confirmPw, //검증위해서 필요
           phone_number: phone,
-          // nickname은...?
+          nickname : nickname,
           age_group: age,
-        });
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json', 
+          },
+        }
+      );
+        
         console.log('회원가입 성공:', res.data);
         navigation.navigate('SignUpSuccess', {nickname});
 
       }catch (err) {
-        console.error(err.response?.data || err);
+        //console.error(err.response?.data || err);
+        console.log("에러 응답:", err.response?.data);
         setErrors((prev) => ({
           ...prev,
           general: '회원가입에 실패하였습니다. 입력 내용을 다시 한 번 확인해주세요.',
@@ -106,11 +117,11 @@ const SignUpScreen = ({navigation}) => {
         <TextInput
           placeholder="아이디"
           value={userId}
-          onChangeText={setUserId}
-          /* onChangeText={(text) => {
+          //onChangeText={setUserId}
+          onChangeText={(text) => {
             setUserId(text);
-            setIdChecked(null); // ✅ 아이디 바뀌면 중복확인 초기화
-          }} */
+            setIdChecked(null); // 아이디 바뀌면 중복확인 초기화
+          }}
           style={styles.inputWithButton}
         />
         <TouchableOpacity style={styles.checkBtn} onPress={checkIdDuplicate}>
@@ -164,16 +175,17 @@ const SignUpScreen = ({navigation}) => {
       />
 
       {/* 연령대 드롭다운 */}
+      
       <View style={styles.dropdownWrapper}>
         <Picker
           selectedValue={age}
           onValueChange={(itemValue) => setAge(itemValue)}
           style={styles.dropdown}
         >
-          <Picker.Item label="연령대를 선택하세요." value="" />
-          <Picker.Item label="어린이: 5 ~ 12세" value="5-12" />
-          <Picker.Item label="청소년: 13세 ~ 19세" value="13-19" />
-          <Picker.Item label="성인: 20세 이상" value="20" />
+          <Picker.Item label="연령대를 선택하세요." value="" enabled={false} /> 
+          <Picker.Item label="어린이: 5 ~ 12세" value="5~12세" />
+          <Picker.Item label="청소년: 13세 ~ 19세" value="13~19세" />
+          <Picker.Item label="성인: 20세 이상" value="20세 이상" />
         </Picker>
       </View>
       
