@@ -41,13 +41,9 @@ const LoginScreen = ({ navigation }) => {
       {/* 로그인 성공 시 토큰 저장 */}
       await AsyncStorage.setItem('access_token', access_token);
       console.log('로그인 성공 및 토큰 저장 완료!', res.data);
-      //navigation.navigate('EditProfileScreen'); 이동 구현 필요
+      navigation.navigate('EditProfileScreen');
     } catch (err) {
       console.error('로그인 실패:', err.response?.data || err);
-      console.log(
-        "보내는 값:", 
-        new URLSearchParams({ username: userId, password: password }).toString()
-      );
       setErrors({ general: '로그인에 실패했습니다. 정보를 확인해주세요.' });
     }
   };

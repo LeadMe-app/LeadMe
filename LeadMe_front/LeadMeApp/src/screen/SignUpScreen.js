@@ -69,7 +69,12 @@ const SignUpScreen = ({navigation}) => {
       valid = false;
     }
 
-    if (password !== confirmPw) {
+    if (password.length < 8) {
+      newErrors.password = '비밀번호는 8자 이상이어야 합니다.';
+      valid = false;
+    }    
+
+    if (confirmPw && password !== confirmPw) {
       newErrors.password = '비밀번호가 일치하지 않습니다.';
       valid = false;
     }
@@ -81,7 +86,7 @@ const SignUpScreen = ({navigation}) => {
         const res = await axiosInstance.post('/api/auth/register', {
           username: userId,
           password: password,
-          password_confirm : confirmPw, //검증위해서 필요
+          password_confirm : confirmPw, //검증 위해서 필요
           phone_number: phone,
           nickname : nickname,
           age_group: age,
@@ -94,7 +99,7 @@ const SignUpScreen = ({navigation}) => {
       );
         
         console.log('회원가입 성공:', res.data);
-        navigation.navigate('SignUpSuccess', {nickname});
+        navigation.navigate('SignUpSuccess', {nickname}); // 모달로 바꾸면 좋을 것 같아요!
 
       }catch (err) {
         //console.error(err.response?.data || err);
@@ -134,24 +139,54 @@ const SignUpScreen = ({navigation}) => {
         <Text style={styles.success}>사용 가능한 아이디입니다.</Text>
       ) : null}
 
-      {/* 비밀번호 */}
+      {/* 비밀번호 입력 */}
       <TextInput
         placeholder="비밀번호"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (text.length < 8) {
+            setErrors((prev) => ({
+              ...prev,
+              password: '비밀번호는 8자 이상이어야 합니다.',
+            }));
+          } else {
+            setErrors((prev) => ({ ...prev, password: '' }));
+          }
+
+          if (confirmPw && text !== confirmPw) {
+            setErrors((prev) => ({
+              ...prev,
+              confirmPw: '비밀번호가 일치하지 않습니다.',
+            }));
+          } else {
+            setErrors((prev) => ({ ...prev, confirmPw: '' }));
+          }
+        }}
         style={styles.input}
       />
+      {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
 
-      {/* 비밀번호 확인 */}
+      {/* 비밀번호 재확인 */}
       <TextInput
         placeholder="비밀번호 재확인"
         secureTextEntry
         value={confirmPw}
-        onChangeText={setConfirmPw}
+        onChangeText={(text) => {
+          setConfirmPw(text);
+          if (text !== password) {
+            setErrors((prev) => ({
+              ...prev,
+              confirmPw: '비밀번호가 일치하지 않습니다.',
+            }));
+          } else {
+            setErrors((prev) => ({ ...prev, confirmPw: '' }));
+          }
+        }}
         style={styles.input}
       />
-      {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
+      {errors.confirmPw ? <Text style={styles.error}>{errors.confirmPw}</Text> : null}
 
       {/* 닉네임 */}
       <TextInput
@@ -165,32 +200,43 @@ const SignUpScreen = ({navigation}) => {
       <TextInput
         placeholder="전화번호"
         value={phone}
-        onChangeText={setPhone}
-        /* onChangeText={(text) => {
+        onChangeText={(text) => {
           const onlyNums = text.replace(/[^0-9]/g, '');
           setPhone(onlyNums);
-          }} 숫자 필터링 */
+          if (!onlyNums) {
+            setErrors((prev) => ({ ...prev, phone: '전화번호를 입력해주세요.' }));
+          } else {
+            setErrors((prev) => ({ ...prev, phone: '' }));
+          }
+        }}
         keyboardType="phone-pad"
         style={styles.input}
       />
+      {errors.phone ? <Text style={styles.error}>{errors.phone}</Text> : null}
 
-      {/* 연령대 드롭다운 */}
-      
+      {/* 연령대 선택 */}
       <View style={styles.dropdownWrapper}>
         <Picker
           selectedValue={age}
-          onValueChange={(itemValue) => setAge(itemValue)}
+          onValueChange={(itemValue) => {
+            setAge(itemValue);
+            if (!itemValue) {
+              setErrors((prev) => ({ ...prev, age: '연령대를 선택해주세요.' }));
+            } else {
+              setErrors((prev) => ({ ...prev, age: '' }));
+            }
+          }}
           style={styles.dropdown}
         >
-          <Picker.Item label="연령대를 선택하세요." value="" enabled={false} /> 
+          <Picker.Item label="연령대를 선택하세요." value="" enabled={false} />
           <Picker.Item label="어린이: 5 ~ 12세" value="5~12세" />
           <Picker.Item label="청소년: 13세 ~ 19세" value="13~19세" />
           <Picker.Item label="성인: 20세 이상" value="20세 이상" />
         </Picker>
       </View>
-      
+      {errors.age ? <Text style={styles.error}>{errors.age}</Text> : null}
 
-      {/* 모든 입력 오류 */}
+      {/* 전체 오류 메시지 */}
       {errors.general ? <Text style={styles.error}>{errors.general}</Text> : null}
 
       {/* 회원가입 버튼 */}
@@ -198,10 +244,8 @@ const SignUpScreen = ({navigation}) => {
         <Text style={styles.submitText}>회원가입</Text>
       </TouchableOpacity>
 
-      {/* 뒤로 가기 버튼 (동작 연결은 필요시 navigation 추가) */}
+      {/* 뒤로가기 버튼 */}
       <BackButton />
-      
-    
     </ScrollView>
   );
 };

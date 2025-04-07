@@ -1,19 +1,40 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert} from 'react-native';
+import axiosInstance from '../config/axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const UnSubscribe = ({ navigation }) => {
-  const handleUnSubscribe = () => {
-    // TODO: 백엔드에 회원탈퇴 요청 보내기 (axios import 미리 해놨습니다.)
-    
-    alert('회원탈퇴가 완료되었습니다.');
-    navigation.navigate('Login');
+  const handleUnSubscribe = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+
+      // 현재 로그인한 사용자 정보 가져오기
+      const userInfoRes = await axiosInstance.get('/api/users/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const userId = userInfoRes.data.user_id;
+
+      // 탈퇴 요청 보내기
+      await axiosInstance.delete(`/api/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      Alert.alert('알림', '회원탈퇴가 완료되었습니다.');
+      await AsyncStorage.removeItem('access_token'); // 토큰 제거
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('회원탈퇴 실패:', error);
+      Alert.alert('오류', '회원탈퇴에 실패했습니다.');
+    }
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-        <Ionicons name="close" size={24} color="#000" />
-      </TouchableOpacity>
 
       <Text style={styles.title}>탈퇴하시겠습니까?</Text>
       <Text style={styles.text}>
@@ -26,6 +47,11 @@ const UnSubscribe = ({ navigation }) => {
       <TouchableOpacity style={styles.withdrawBtn} onPress={handleUnSubscribe}>
         <Text style={styles.withdrawText}>회원탈퇴</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
+        <Text style={styles.cancelText}>취소</Text>
+      </TouchableOpacity>
+      
     </View>
   );
 };
