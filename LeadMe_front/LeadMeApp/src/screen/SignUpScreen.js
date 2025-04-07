@@ -11,6 +11,7 @@ import { Picker } from '@react-native-picker/picker';
 //import axios from 'axios';
 import BackButton from '../components/BackButton';
 import axiosInstance from '../config/axiosInstance';
+import SignUpSuccessModal from './SignUpSuccessModal';
 
 const SignUpScreen = ({navigation}) => {
   const [userId, setUserId] = useState('');
@@ -20,6 +21,7 @@ const SignUpScreen = ({navigation}) => {
   const [nickname, setNickname] = useState('');
   const [phone, setPhone] = useState('');
   const [age, setAge] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
   const [errors, setErrors] = useState({
     userId: '',
     password: '',
@@ -99,8 +101,8 @@ const SignUpScreen = ({navigation}) => {
       );
         
         console.log('회원가입 성공:', res.data);
-        navigation.navigate('SignUpSuccess', {nickname}); // 모달로 바꾸면 좋을 것 같아요!
-
+        //navigation.navigate('SignUpSuccess', {nickname}); // 모달로 바꾸면 좋을 것 같아요!
+        setShowSuccess(true);
       }catch (err) {
         //console.error(err.response?.data || err);
         console.log("에러 응답:", err.response?.data);
@@ -246,6 +248,16 @@ const SignUpScreen = ({navigation}) => {
 
       {/* 뒤로가기 버튼 */}
       <BackButton />
+      {/*SignUpSuccessModal 추가 부분*/}
+      <SignUpSuccessModal
+      visible = {showSuccess}
+      onClose = {() => {
+        setShowSuccess(false);
+        navigation.navigate('Login');
+
+      }}
+      nickname = {nickname}
+      />
     </ScrollView>
   );
 };
