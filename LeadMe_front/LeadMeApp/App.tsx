@@ -10,6 +10,7 @@ import EditProfileScreen from './src/screen/EditProfileScreen';
 import BackButton from './src/components/BackButton';
 import UnSubscribe from './src/screen/UnSubscribe';
 import SelectSpeechTypeScreen from './src/screen/SelectSpeechTypeScreen';
+import StutteringCategoryData from './src/screen/StutteringCategoryData';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
         <Stack.Screen name="UnSubscribe" component={UnSubscribe} options = {{headerShown: false}}/>
         <Stack.Screen name="BackButton" component={BackButton} options = {{headerShown: false}}/>
         <Stack.Screen name="SelectSpeech" component={SelectSpeechTypeScreen} options = {{headerShown: false}}/>
+        <Stack.Screen name="StutteringCategory" component={StutteringCategoryData} options = {{headerShown: false}}/>
       </Stack.Navigator>
     </NavigationContainer>
   );
