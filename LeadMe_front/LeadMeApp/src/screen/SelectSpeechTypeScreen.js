@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import BackButton from '../components/BackButton'; 
 
 const SelectSpeechTypeScreen = ({ navigation }) => {
   return (
@@ -8,7 +9,7 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={[styles.optionBox, { backgroundColor: '#FFD8A9' }]}
-        onPress={() => navigation.navigate('FreeSpeech')} // 추후 직접 발화 실제 페이지로 연결
+        onPress={() => navigation.navigate('FreeSpeech')}
       >
         <Text style={styles.optionTitle}>직접 발화</Text>
         <Text style={styles.optionSubtitle}>자유롭게 말합니다</Text>
@@ -16,18 +17,13 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={[styles.optionBox, { backgroundColor: '#A9D6FD' }]}
-        onPress={() => navigation.navigate('SentenceSpeech')} // 추후 문장 발화 실제 페이지로 연결
+        onPress={() => navigation.navigate('SentenceSpeech')}
       >
         <Text style={styles.optionTitle}>문장 발화</Text>
         <Text style={styles.optionSubtitle}>제공된 문장을 따라 읽습니다</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.backText}>뒤로 가기</Text>
-      </TouchableOpacity>
+      <BackButton />
     </View>
   );
 };
@@ -40,6 +36,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF6EB',
     alignItems: 'center',
     paddingTop: 60,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 20,
@@ -48,7 +45,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   optionBox: {
-    width: '90%',
+    width: '100%',
     borderRadius: 16,
     paddingVertical: 30,
     alignItems: 'center',
@@ -65,18 +62,5 @@ const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: 14,
     color: '#333',
-  },
-  backButton: {
-    position: 'absolute',
-    bottom: 40,
-    backgroundColor: '#27AE60',
-    paddingVertical: 12,
-    paddingHorizontal: 100,
-    borderRadius: 12,
-  },
-  backText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
   },
 });
