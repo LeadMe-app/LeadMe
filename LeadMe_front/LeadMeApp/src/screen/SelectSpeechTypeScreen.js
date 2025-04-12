@@ -23,6 +23,7 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
         <Text style={styles.optionSubtitle}>제공된 문장을 따라 읽습니다</Text>
       </TouchableOpacity>
 
+
       <BackButton />
     </View>
   );
