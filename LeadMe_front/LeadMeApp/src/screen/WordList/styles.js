@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   optionBox: {
-    width: '100%',
+    flex: 0.48,
     borderRadius: 16,
     paddingVertical: 20,
     alignItems: 'center',
@@ -27,5 +27,11 @@ export const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: 14,
     color: COLORS.textSecondary, // 서브 텍스트 색상
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '90%',
+    marginBottom: 20,
   },
 });
