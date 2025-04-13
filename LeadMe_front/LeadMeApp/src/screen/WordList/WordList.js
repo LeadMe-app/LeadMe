@@ -9,7 +9,6 @@ const WordList = ({ navigation }) => {
     <View style={styles.container}>
       <Logo />
 
-      {/* 첫 번째 줄 - 토끼 / 고래 */}
       <View style={styles.row}>
         <TouchableOpacity
           style={[styles.optionBox, { backgroundColor: '#FFD3A5' }]}
@@ -24,7 +23,6 @@ const WordList = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* 두 번째 줄 - 돼지 / 원숭이 */}
       <View style={styles.row}>
         <TouchableOpacity
           style={[styles.optionBox, { backgroundColor: '#C1E1C1' }]}
