@@ -4,11 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
 } from 'react-native';
-import axiosInstance from '../config/axiosInstance';
+import axiosInstance from '../../config/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // 토큰 저장
 import qs from 'qs'; // form
+import { styles } from './styles';
+import Logo from '../../components/Logo';
 
 const LoginScreen = ({ navigation }) => {
   const [userId, setUserId] = useState('');
@@ -40,8 +41,19 @@ const LoginScreen = ({ navigation }) => {
 
       {/* 로그인 성공 시 토큰 저장 */}
       await AsyncStorage.setItem('access_token', access_token);
+
+      const userInfoRes = await axiosInstance.get('/api/users/me', {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+  
+      const { nickname } = userInfoRes.data;
+  
+      console.log('닉네임:', nickname);
+
       console.log('로그인 성공 및 토큰 저장 완료!', res.data);
-      navigation.navigate('EditProfileScreen');
+      navigation.navigate('HomeScreen', { nickname });
     } catch (err) {
       console.error('로그인 실패:', err.response?.data || err);
       setErrors({ general: '로그인에 실패했습니다. 정보를 확인해주세요.' });
@@ -50,7 +62,7 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>LEAD ME</Text>
+      <Logo />
 
       {/* 아이디 입력 */}
       <TextInput
@@ -94,74 +106,5 @@ const LoginScreen = ({ navigation }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF6EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#8E44AD',
-    marginBottom: 40,
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#DDDDDD',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    marginVertical: 8,
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 14,
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  loginButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#007BFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    marginVertical: 10,
-  },
-  loginButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  linkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
-    marginVertical: 5, 
-  },
-  linkText: {
-    color: '#666',
-    fontSize: 13, 
-  },
-  experienceButton: {
-    width: '50%',
-    height: 50,
-    backgroundColor: '#2ECC71',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    marginTop: 50,
-  },
-  experienceButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});
 
 export default LoginScreen;

@@ -14,6 +14,8 @@ const BackButton = () => {
 
 const styles = StyleSheet.create({
     backBtn: {
+      position: 'absolute',
+      bottom : 20,
         backgroundColor: '#2ECC71',
         padding: 14,
         width: '100%',

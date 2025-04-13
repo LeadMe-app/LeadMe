@@ -4,11 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
 } from "react-native";
-import SuccessModal from "../components/SuccessModal";
-import BackButton from "../components/BackButton";
-import axiosInstance from "../config/axiosInstance";
+import SuccessModal from "../../components/SuccessModal";
+import BackButton from '../../components/BackButton';
+import axiosInstance from "../../config/axiosInstance";
+import { styles } from './styles';
+import Logo from '../../components/Logo';
 
 const ResetPWScreen = ({ route, navigation }) => {
   const { username } = route.params;
@@ -59,7 +60,7 @@ const ResetPWScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>LEAD ME</Text>
+      <Logo/>
       <Text style={styles.header}>비밀번호 변경</Text>
 
       {/* 비밀번호 입력 */}
@@ -138,53 +139,3 @@ const ResetPWScreen = ({ route, navigation }) => {
 
 export default ResetPWScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF6EB",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-  },
-  logo: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#8E44AD",
-    marginBottom: 40,
-  },
-  header: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 24,
-  },
-  input: {
-    width: "100%",
-    height: 50,
-    backgroundColor: "#DDDDDD",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    marginVertical: 8,
-  },
-  button: {
-    backgroundColor: "#007BFF",
-    padding: 14,
-    width: "100%",
-    borderRadius: 12,
-    marginTop: 20,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  message: {
-    color: "red",
-    marginTop: 15,
-  },
-  error: {
-    color: "red",
-    alignSelf: "flex-start",
-    marginLeft: 4,
-  },
-});

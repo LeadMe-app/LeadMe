@@ -5,12 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  StyleSheet,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axiosInstance from '../config/axiosInstance';
-import BackButton from '../components/BackButton';
+import axiosInstance from '../../config/axiosInstance';
+import BackButton from '../../components/BackButton';
+import { styles } from './styles';
+import Logo from '../../components/Logo';
 
 const EditProfileScreen = ({ navigation }) => {
   const [userId, setUserId] = useState('');
@@ -146,7 +147,7 @@ const EditProfileScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>LEAD ME</Text>
+      <Logo />
       <Text style={styles.header}>회원정보수정</Text>
 
       <TextInput style={styles.input} value={userId} editable={false} />
@@ -203,61 +204,8 @@ const EditProfileScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <BackButton />
-      <TouchableOpacity onPress={() => navigation.navigate('UnSubscribe')}>
-        <Text style={{ color: 'red', fontSize: 16 }}>회원탈퇴</Text>
-      </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF6EB',
-    padding: 20,
-    justifyContent: 'center',
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#8E44AD',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    backgroundColor: '#ddd',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  picker: {
-    backgroundColor: '#fff',
-    marginBottom: 20,
-    borderRadius: 12,
-  },
-  applyBtn: {
-    backgroundColor: '#007BFF',
-    padding: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  applyText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  error: {
-    color: 'red',
-    marginBottom: 10,
-    marginLeft: 5,
-    fontSize: 12,
-  },
-  
-});
 
 export default EditProfileScreen;

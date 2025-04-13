@@ -4,13 +4,15 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 //import axios from 'axios';
-import BackButton from '../components/BackButton';
-import axiosInstance from '../config/axiosInstance';
+import BackButton from '../../components/BackButton';
+import axiosInstance from '../../config/axiosInstance';
+import SignUpSuccessModal from '../../components/SignUpSuccessModal';
+import { styles } from './styles';
+import Logo from '../../components/Logo';
 
 const SignUpScreen = ({navigation}) => {
   const [userId, setUserId] = useState('');
@@ -20,6 +22,7 @@ const SignUpScreen = ({navigation}) => {
   const [nickname, setNickname] = useState('');
   const [phone, setPhone] = useState('');
   const [age, setAge] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
   const [errors, setErrors] = useState({
     userId: '',
     password: '',
@@ -99,8 +102,8 @@ const SignUpScreen = ({navigation}) => {
       );
         
         console.log('회원가입 성공:', res.data);
-        navigation.navigate('SignUpSuccess', {nickname}); // 모달로 바꾸면 좋을 것 같아요!
-
+        //navigation.navigate('SignUpSuccess', {nickname}); // 모달로 바꾸면 좋을 것 같아요!
+        setModalVisible(true, {nickname});
       }catch (err) {
         //console.error(err.response?.data || err);
         console.log("에러 응답:", err.response?.data);
@@ -114,7 +117,7 @@ const SignUpScreen = ({navigation}) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>LEAD ME</Text>
+      < Logo />
       <Text style={styles.heading}>회원가입</Text>
 
       {/* 아이디 + 중복확인 */}
@@ -155,14 +158,6 @@ const SignUpScreen = ({navigation}) => {
             setErrors((prev) => ({ ...prev, password: '' }));
           }
 
-          if (confirmPw && text !== confirmPw) {
-            setErrors((prev) => ({
-              ...prev,
-              confirmPw: '비밀번호가 일치하지 않습니다.',
-            }));
-          } else {
-            setErrors((prev) => ({ ...prev, confirmPw: '' }));
-          }
         }}
         style={styles.input}
       />
@@ -246,83 +241,18 @@ const SignUpScreen = ({navigation}) => {
 
       {/* 뒤로가기 버튼 */}
       <BackButton />
+      {/*SignUpSuccessModal 추가 부분*/}
+      <SignUpSuccessModal
+      visible = {modalVisible}
+      onClose = {() => {
+        setModalVisible(false);
+        navigation.navigate('Login');
+
+      }}
+      nickname = {nickname}
+      />
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF6EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#8E44AD', marginTop: 40 },
-  heading: { fontSize: 24, fontWeight: 'bold', marginVertical: 16 },
-  row: {
-    flexDirection: 'row',
-    width: '100%',
-    marginVertical: 6,
-  },
-  inputWithButton: {
-    flex: 1,
-    backgroundColor: '#ddd',
-    padding: 12,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-  checkBtn: {
-    backgroundColor: '#F5CBA7',
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  checkText: { color: '#333', fontWeight: 'bold' },
-  input: {
-    width: '100%',
-    backgroundColor: '#ddd',
-    padding: 12,
-    borderRadius: 12,
-    marginVertical: 6,
-  },
-  dropdownWrapper: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginVertical: 6,
-    overflow: 'hidden',
-  },
-  dropdown: {
-    width: '100%',
-  },
-  submitBtn: {
-    backgroundColor: '#007BFF',
-    padding: 14,
-    width: '100%',
-    borderRadius: 12,
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  submitText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  error: {
-    color: 'red',
-    fontSize: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  success: {
-    color: 'green',
-    fontSize: 12,
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-});
 
 export default SignUpScreen;
