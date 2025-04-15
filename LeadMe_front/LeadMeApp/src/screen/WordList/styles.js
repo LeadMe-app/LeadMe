@@ -10,12 +10,11 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   optionBox: {
-    flex: 0.48,
+    width: '48%',
     borderRadius: 16,
-    paddingVertical: 20,
+    paddingVertical: 60,
     alignItems: 'center',
-    marginBottom: 30,
-    shadowColor: COLORS.boxShadow, // 그림자 색상
+    shadowColor: COLORS.boxShadow,
     elevation: 4,
   },
   optionTitle: {
@@ -31,7 +30,7 @@ export const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '90%',
-    marginBottom: 20,
+    width: '100%',
+    marginBottom: 50,
   },
 });
