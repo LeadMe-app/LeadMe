@@ -10,7 +10,7 @@ from sqlalchemy import text
 # 내부 모듈 임포트
 from database import get_db, engine
 import models
-from app.api import users, speech_sessions, word_list, speed_analysis, speech_recognition, auth
+from app.api import users, speech_sessions, word_list, speed_analysis, speech_recognition, auth, sentence_generation
 
 # 기본 디렉토리 생성
 os.makedirs("uploads/audio", exist_ok=True)
@@ -55,7 +55,7 @@ app.include_router(speech_sessions.router, prefix="/api/speech", tags=["speech"]
 app.include_router(word_list.router, prefix="/api/words", tags=["words"])
 app.include_router(speed_analysis.router, prefix="/api/speed", tags=["speed"])
 app.include_router(speech_recognition.router, prefix="/api/voice", tags=["voice"])
-
+app.include_router(sentence_generation.router, prefix="/api/sentence", tags=["sentence"])
 
 # 서버 시작 이벤트
 # 서버 시작 이벤트
