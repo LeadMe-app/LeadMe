@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from database import get_db
 from models import User  # 사용자 테이블
-from app.services.openai_client import get_sentence_for_age_group
+from services.openai_client import get_sentence_for_age_group
 
 router = APIRouter()
 
