@@ -9,18 +9,17 @@ from database import Base
 class User(Base):
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    username = Column(String, unique=True, index=True, nullable=False)
+    user_id = Column(String, primary_key=True, index=True)
+    username = Column(String, index=True, nullable=False)
     user_pw = Column(String, nullable=False)
     phone_number = Column(String, unique=True, index=True, nullable=False)
     age_group = Column(String, nullable=False)
-    nickname = Column(String, unique=True, index=True, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     # CHECK 제약 조건 추가
     __table_args__ = (
-        CheckConstraint("age_group IN ('5~12세', '13~19세', '20세 이상')", name="check_age_group"),
+        CheckConstraint("age_group IN ('7세이하', '8~13세', '14세 이상')", name="check_age_group"),
     )
 
     # 관계 설정

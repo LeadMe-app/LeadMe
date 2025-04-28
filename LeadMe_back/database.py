@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 환경 변수에서 데이터베이스 연결 정보 가져오기
-DB_USER = os.getenv("DB_USER", "min")  # 기본 사용자명
-DB_PASSWORD = os.getenv("DB_PASSWORD", "minjeong")  # 실제 비밀번호로 변경
+DB_USER = os.getenv("DB_USER", "Cha")  # 기본 사용자명
+DB_PASSWORD = os.getenv("DB_PASSWORD", "chanju")  # 실제 비밀번호로 변경
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "speech_test")

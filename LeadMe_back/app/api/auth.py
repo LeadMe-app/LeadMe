@@ -235,7 +235,7 @@ async def login(
     Returns:
         Token: 액세스 토큰
     """
-    # 로그인 시도 횟수 확인 
+    # 로그인 시도 횟수 확인 (username 필드에 user_id가 전달됨)
     user_id = form_data.username
     check_login_attempts(user_id)
 

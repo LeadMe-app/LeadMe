@@ -7,7 +7,6 @@ import tempfile
 import shutil
 import librosa
 from datetime import datetime, date
-
 # 내부 모듈 임포트
 from database import get_db
 import models
@@ -22,7 +21,6 @@ UPLOAD_DIR = "uploads/audio"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# 기존 엔드포인트들 유지...
 
 @router.post("/analyze-audio-file/", status_code=status.HTTP_201_CREATED)
 async def analyze_audio_file(
@@ -131,35 +129,45 @@ async def analyze_audio_file(
 def analyze_speech(audio_file):
     """
     음성 파일을 분석하여 발화 속도 및 기타 정보를 추출합니다.
-
-    Args:
-        audio_file: 분석할 오디오 파일 경로
-
-    Returns:
-        분석 결과 딕셔너리
     """
-    # 파일 로드
-    y, sr = librosa.load(audio_file, sr=None)  # 원본 샘플링 레이트 유지
+    try:
+        # 파일 로드
+        y, sr = librosa.load(audio_file, sr=None)  # 원본 샘플링 레이트 유지
 
-    # 기본 정보 추출
-    duration = librosa.get_duration(y=y, sr=sr)
+        # 기본 정보 추출
+        duration = librosa.get_duration(y=y, sr=sr)
 
-    # 음성 활성화 검출
-    frames = librosa.effects.split(y, top_db=20)
-    voiced_duration = sum(f[1] - f[0] for f in frames) / sr
+        # 음성 활성화 검출
+        frames = librosa.effects.split(y, top_db=20)
+        voiced_duration = sum(f[1] - f[0] for f in frames) / sr
 
-    # 음절 수 추정 (한국어에 최적화)
-    # 한국어의 경우 약 4-5 음절/초로 가정
-    syllables_estimate = int(voiced_duration * 4.5)  # 한국어 평균 발화 속도
+        # 음절 수 추정 (한국어에 최적화)
+        syllables_estimate = int(voiced_duration * 4.5)  # 한국어 평균 발화 속도
 
-    # SPM 계산
-    spm = int(syllables_estimate / duration * 60)
+        # SPM 계산
+        spm = int(syllables_estimate / duration * 60)
 
-    # 결과 반환
-    return {
-        "duration": round(duration, 2),
-        "voiced_duration": round(voiced_duration, 2),
-        "voiced_percentage": round(voiced_duration / duration * 100, 1),
-        "syllables_estimate": syllables_estimate,
-        "spm": spm
-    }
+        # 결과 반환
+        return {
+            "duration": round(duration, 2),
+            "voiced_duration": round(voiced_duration, 2),
+            "voiced_percentage": round(voiced_duration / duration * 100, 1),
+            "syllables_estimate": syllables_estimate,
+            "spm": spm
+        }
+    except Exception as e:
+        # 오류 상세 로깅
+        import logging
+        logging.error(f"음성 분석 중 오류 발생: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
+
+        # 기본값 반환
+        return {
+            "duration": 0,
+            "voiced_duration": 0,
+            "voiced_percentage": 0,
+            "syllables_estimate": 0,
+            "spm": 0,
+            "error": str(e)
+        }

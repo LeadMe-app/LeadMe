@@ -35,7 +35,7 @@ class UserUpdate(BaseModel):
 
 # 사용자 응답 모델 (비밀번호 제외)
 class UserResponse(BaseModel):
-    user_id: str  
+    user_id: str
     username: str
     phone_number: str
     age_group: Optional[str] = None
