@@ -55,7 +55,7 @@ class UserCreate(BaseModel):
         }
 
 
-class UsernameCheck(BaseModel):
+class UserIdCheck(BaseModel):
     """
     사용자명 중복 확인 요청 모델
     """
