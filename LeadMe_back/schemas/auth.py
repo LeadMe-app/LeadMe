@@ -44,16 +44,17 @@ class UserCreate(BaseModel):
         return v
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "user_id": "user123",
                 "username": "홍길동",
                 "password": "securepassword",
                 "password_confirm": "securepassword",
                 "phone_number": "01012345678",
-                "age_group": "14세 이상"
+                "age_group": "20세 이상"
             }
         }
+
 
 
 class UserIdCheck(BaseModel):

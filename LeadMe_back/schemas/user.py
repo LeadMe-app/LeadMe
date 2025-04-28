@@ -8,11 +8,11 @@ from datetime import datetime
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     phone_number: str = Field(..., min_length=10, max_length=15)
-    age_group: str = Field(..., description="사용자 연령대('7세이하', '8~13세', '14세 이상')")
+    age_group: str = Field(..., description="사용자 연령대('5~12세', '13~19세', '20세 이상')")
 
     @validator('age_group')
     def validate_age_group(cls, v):
-        valid_age_groups = ['7세이하', '8~13세', '14세 이상']
+        valid_age_groups = ['5~12세', '13~19세', '20세 이상']
         if v not in valid_age_groups:
             raise ValueError(f'유효한 연령대가 아닙니다. 가능한 값: {", ".join(valid_age_groups)}')
         return v
@@ -27,7 +27,7 @@ class UserUpdate(BaseModel):
     @validator('age_group')
     def validate_age_group(cls, v):
         if v is not None:
-            valid_age_groups = ['7세이하', '8~13세', '14세 이상']
+            valid_age_groups = ['5~12세', '13~19세', '20세 이상']
             if v not in valid_age_groups:
                 raise ValueError(f'유효한 연령대가 아닙니다. 가능한 값: {", ".join(valid_age_groups)}')
         return v
