@@ -35,7 +35,7 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8)
     password_confirm: str = Field(..., min_length=8)
     phone_number: str = Field(..., min_length=10, max_length=15)
-    age_group: str = Field(..., description="사용자 연령대(7세 이하, 8~13세, 14세 이상)")
+    age_group: str = Field(..., description="사용자 연령대(5~12세, 13~19세, 20세 이상)")
 
     @validator('password_confirm')
     def passwords_match(cls, v, values, **kwargs):
