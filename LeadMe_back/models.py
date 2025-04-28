@@ -19,7 +19,7 @@ class User(Base):
 
     # CHECK 제약 조건 추가
     __table_args__ = (
-        CheckConstraint("age_group IN ('7세이하', '8~13세', '14세 이상')", name="check_age_group"),
+        CheckConstraint("age_group IN ('5~12세', '13~19세', '20세 이상')", name="check_age_group"),
     )
 
     # 관계 설정
