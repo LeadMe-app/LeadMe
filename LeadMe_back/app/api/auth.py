@@ -12,7 +12,7 @@ import asyncio
 
 # 내부 모듈 임포트
 from database import get_db
-from app import models, schemas
+from LeadMe_back import models, schemas
 import models
 from app.core.security import (
     verify_password,
