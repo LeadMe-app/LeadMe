@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-<<<<<<< HEAD
 import { COLORS } from "../../styles/colors";
 
 export const styles = StyleSheet.create({
@@ -10,16 +9,6 @@ export const styles = StyleSheet.create({
       justifyContent: 'center',
       padding: 20,
     },
-=======
-
-export const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF6EB',
-    alignItems: 'center',
-    paddingTop: 60,
-  },
->>>>>>> f9670c0fe54ea5311d3749df7c6b127ca8160177
   iconRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -59,8 +48,4 @@ export const styles = StyleSheet.create({
     marginTop: 8,
     fontWeight: 'bold',
   },
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> f9670c0fe54ea5311d3749df7c6b127ca8160177

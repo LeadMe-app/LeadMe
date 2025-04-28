@@ -105,7 +105,6 @@ const SignUpScreen = ({navigation}) => {
         //navigation.navigate('SignUpSuccess', {nickname}); // 모달로 바꾸면 좋을 것 같아요!
         setModalVisible(true, {nickname});
       }catch (err) {
-        console.error('회원가입 에러 전체', err);
         console.error('err.response:', err.response);
         console.error('err.message: ', err.message);
         console.log("에러 응답:", err.response?.data);
