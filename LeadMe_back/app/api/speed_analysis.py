@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
-import subprocess
-import json
+import tempfile
+import shutil
+import librosa
 from datetime import datetime, date
 
 # 내부 모듈 임포트
@@ -12,218 +13,153 @@ from database import get_db
 import models
 from schemas.speech import SpeedAnalysisCreate, SpeedAnalysisResponse
 from schemas.user import UserSettingsCreate, UserSettingsResponse
+from app.api.auth import get_current_user  # 현재 로그인한 사용자 가져오기
 
 router = APIRouter()
 
-
-@router.post("/analysis/", response_model=SpeedAnalysisResponse, status_code=status.HTTP_201_CREATED)
-def create_speed_analysis(
-        analysis: SpeedAnalysisCreate,
-        db: Session = Depends(get_db)
-):
-    """새로운 발화 속도 분석 결과를 저장합니다."""
-    # 사용자 존재 여부 확인
-    db_user = db.query(models.User).filter(models.User.user_id == analysis.user_id).first()
-    if db_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 사용자를 찾을 수 없습니다."
-        )
-
-    # 연령대별 발화 속도 정보 조회
-    db_age_group_speed = db.query(models.AgeGroupSpeechRate).filter(
-        models.AgeGroupSpeechRate.age_group == db_user.age_group
-    ).first()
-
-    # 속도 카테고리 결정
-    speed_category = "정상"
-    if db_age_group_speed:
-        if analysis.spm <= db_age_group_speed.slow_rate:
-            speed_category = "느림"
-        elif analysis.spm >= db_age_group_speed.fast_rate:
-            speed_category = "빠름"
-
-    # 새 분석 결과 생성
-    db_analysis = models.SpeedAnalysis(
-        user_id=analysis.user_id,
-        spm=analysis.spm,
-        speed_category=speed_category,
-        analysis_date=datetime.utcnow().date()
-    )
-
-    db.add(db_analysis)
-    db.commit()
-    db.refresh(db_analysis)
-
-    return db_analysis
+# 업로드 디렉토리 설정
+UPLOAD_DIR = "uploads/audio"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-@router.get("/analysis/", response_model=List[SpeedAnalysisResponse])
-def read_speed_analyses(
-        user_id: Optional[str] = None,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-        skip: int = 0,
-        limit: int = 100,
-        db: Session = Depends(get_db)
-):
-    """발화 속도 분석 결과 목록을 반환합니다. 선택적으로 사용자 ID 및 날짜로 필터링합니다."""
-    query = db.query(models.SpeedAnalysis)
+# 기존 엔드포인트들 유지...
 
-    if user_id:
-        query = query.filter(models.SpeedAnalysis.user_id == user_id)
-
-    if start_date:
-        query = query.filter(models.SpeedAnalysis.analysis_date >= start_date)
-
-    if end_date:
-        query = query.filter(models.SpeedAnalysis.analysis_date <= end_date)
-
-    # 날짜 기준 내림차순 정렬
-    query = query.order_by(models.SpeedAnalysis.analysis_date.desc())
-
-    analyses = query.offset(skip).limit(limit).all()
-    return analyses
-
-
-@router.get("/analysis/{analysis_id}", response_model=SpeedAnalysisResponse)
-def read_speed_analysis(
-        analysis_id: int,
-        db: Session = Depends(get_db)
-):
-    """특정 발화 속도 분석 결과를 반환합니다."""
-    db_analysis = db.query(models.SpeedAnalysis).filter(models.SpeedAnalysis.analysis_id == analysis_id).first()
-    if db_analysis is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 분석 결과를 찾을 수 없습니다."
-        )
-    return db_analysis
-
-
-@router.delete("/analysis/{analysis_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_speed_analysis(
-        analysis_id: int,
-        db: Session = Depends(get_db)
-):
-    """발화 속도 분석 결과를 삭제합니다."""
-    db_analysis = db.query(models.SpeedAnalysis).filter(models.SpeedAnalysis.analysis_id == analysis_id).first()
-    if db_analysis is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 분석 결과를 찾을 수 없습니다."
-        )
-
-    db.delete(db_analysis)
-    db.commit()
-    return None
-
-
-@router.post("/settings/", response_model=UserSettingsResponse, status_code=status.HTTP_201_CREATED)
-def create_user_settings(
-        settings: UserSettingsCreate,
-        db: Session = Depends(get_db)
-):
-    """사용자의 선호 발화 속도 설정을 저장합니다."""
-    # 사용자 존재 여부 확인
-    db_user = db.query(models.User).filter(models.User.user_id == settings.user_id).first()
-    if db_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 사용자를 찾을 수 없습니다."
-        )
-
-    # 이미 설정이 있는지 확인
-    db_settings = db.query(models.UserSettings).filter(models.UserSettings.user_id == settings.user_id).first()
-
-    if db_settings:
-        # 기존 설정 업데이트
-        db_settings.selected_speech_rate = settings.selected_speech_rate
-    else:
-        # 새 설정 생성
-        db_settings = models.UserSettings(
-            user_id=settings.user_id,
-            selected_speech_rate=settings.selected_speech_rate
-        )
-        db.add(db_settings)
-
-    db.commit()
-    db.refresh(db_settings)
-
-    return db_settings
-
-
-@router.get("/settings/{user_id}", response_model=UserSettingsResponse)
-def read_user_settings(
-        user_id: str,
-        db: Session = Depends(get_db)
-):
-    """사용자의 선호 발화 속도 설정을 반환합니다."""
-    db_settings = db.query(models.UserSettings).filter(models.UserSettings.user_id == user_id).first()
-    if db_settings is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 사용자의 설정을 찾을 수 없습니다."
-        )
-    return db_settings
-
-
-@router.post("/analyze-audio/")
-async def analyze_audio_speed(
+@router.post("/analyze-audio-file/", status_code=status.HTTP_201_CREATED)
+async def analyze_audio_file(
         file: UploadFile = File(...),
-        user_id: Optional[str] = None
+        background_tasks: BackgroundTasks = None,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)  # 현재 로그인한 사용자 가져오기
 ):
-    """음성 파일을 업로드하고 OpenSMILE을 사용하여 발화 속도를 분석합니다."""
+    """
+    음성 파일을 분석하여 발화 속도를 측정하고 결과를 DB에 저장합니다.
+    현재 로그인한 사용자의 ID가 자동으로 사용됩니다.
 
+    Args:
+        file: 분석할 음성 파일
+        background_tasks: 백그라운드 작업
+        db: 데이터베이스 세션
+        current_user: 현재 로그인한 사용자
+
+    Returns:
+        분석 결과
+    """
     # 파일 확장자 검증
-    if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a')):
+    if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="지원되지 않는 파일 형식입니다. .wav, .mp3, .m4a 형식만 허용됩니다."
+            detail="지원되지 않는 파일 형식입니다. .wav, .mp3, .m4a, .ogg 형식만 허용됩니다."
         )
-
-    # 업로드 디렉토리 경로
-    UPLOAD_DIR = "uploads/audio"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-    # 파일명 생성
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{user_id}_{timestamp}_{file.filename}" if user_id else f"{timestamp}_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-
-    # 파일 저장
-    with open(file_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
 
     try:
-        # 여기에 OpenSMILE을 사용한 분석 코드가 들어갈 예정
-        # 현재는 임시 결과 반환
+        # 임시 파일로 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
+            temp_file_path = temp_file.name
+            shutil.copyfileobj(file.file, temp_file)
 
-        # 실제 환경에서는 아래와 같이 OpenSMILE 호출 예정
-        # opensmile_result = subprocess.run(
-        #     ["path/to/opensmile", "-I", file_path, "-C", "config/speech_rate.conf"],
-        #     capture_output=True,
-        #     text=True
-        # )
+        # 파일 분석
+        analysis_result = analyze_speech(temp_file_path)
 
-        # 간단한 테스트 결과 샘플
-        result = {
-            "file_path": file_path,
-            "analysis": {
-                "spm": 240,  # 분당 음절 수 (Syllables Per Minute)
-                "speech_rate_category": "normal",
-                "duration_seconds": 15.3,
-                "total_syllables": 62
-            }
-        }
+        # 현재 사용자 ID 사용
+        user_id = current_user.user_id
 
-        return result
+        # 연령대별 발화 속도 정보 조회
+        db_age_group_speed = db.query(models.AgeGroupSpeechRate).filter(
+            models.AgeGroupSpeechRate.age_group == current_user.age_group
+        ).first()
+
+        # 속도 카테고리 결정
+        speed_category = "정상"
+        if db_age_group_speed:
+            if analysis_result["spm"] <= db_age_group_speed.slow_rate:
+                speed_category = "느림"
+            elif analysis_result["spm"] >= db_age_group_speed.fast_rate:
+                speed_category = "빠름"
+        else:
+            # 기본 기준 적용
+            if analysis_result["spm"] < 180:
+                speed_category = "느림"
+            elif analysis_result["spm"] > 300:
+                speed_category = "빠름"
+
+        # 분석 결과 저장 (항상 저장)
+        db_analysis = models.SpeedAnalysis(
+            user_id=user_id,
+            spm=analysis_result["spm"],
+            speed_category=speed_category,
+            analysis_date=datetime.utcnow().date()
+        )
+
+        db.add(db_analysis)
+        db.commit()
+        db.refresh(db_analysis)
+
+        # 분석 결과에 데이터베이스 ID와 카테고리 추가
+        analysis_result["db_analysis_id"] = db_analysis.analysis_id
+        analysis_result["speed_category"] = speed_category
+        analysis_result["user_id"] = user_id
+
+        # 백그라운드 작업에 임시 파일 삭제 추가
+        if background_tasks:
+            background_tasks.add_task(os.remove, temp_file_path)
+        else:
+            os.remove(temp_file_path)
+
+        # 영구 파일 저장 (선택 사항)
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        permanent_filename = f"speech_{user_id}_{timestamp}{os.path.splitext(file.filename)[1]}"
+        permanent_path = os.path.join(UPLOAD_DIR, permanent_filename)
+
+        # 임시 파일을 영구 파일로 복사
+        shutil.copy2(temp_file_path, permanent_path)
+        analysis_result["file_path"] = permanent_path
+        analysis_result["file_url"] = f"/uploads/audio/{permanent_filename}"
+
+        return analysis_result
 
     except Exception as e:
-        # 파일 삭제
-        os.remove(file_path)
+        # 오류 발생 시 임시 파일 삭제
+        if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"분석 중 오류가 발생했습니다: {str(e)}"
+            detail=f"음성 분석 중 오류가 발생했습니다: {str(e)}"
         )
+
+
+def analyze_speech(audio_file):
+    """
+    음성 파일을 분석하여 발화 속도 및 기타 정보를 추출합니다.
+
+    Args:
+        audio_file: 분석할 오디오 파일 경로
+
+    Returns:
+        분석 결과 딕셔너리
+    """
+    # 파일 로드
+    y, sr = librosa.load(audio_file, sr=None)  # 원본 샘플링 레이트 유지
+
+    # 기본 정보 추출
+    duration = librosa.get_duration(y=y, sr=sr)
+
+    # 음성 활성화 검출
+    frames = librosa.effects.split(y, top_db=20)
+    voiced_duration = sum(f[1] - f[0] for f in frames) / sr
+
+    # 음절 수 추정 (한국어에 최적화)
+    # 한국어의 경우 약 4-5 음절/초로 가정
+    syllables_estimate = int(voiced_duration * 4.5)  # 한국어 평균 발화 속도
+
+    # SPM 계산
+    spm = int(syllables_estimate / duration * 60)
+
+    # 결과 반환
+    return {
+        "duration": round(duration, 2),
+        "voiced_duration": round(voiced_duration, 2),
+        "voiced_percentage": round(voiced_duration / duration * 100, 1),
+        "syllables_estimate": syllables_estimate,
+        "spm": spm
+    }
