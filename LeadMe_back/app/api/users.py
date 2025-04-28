@@ -33,7 +33,7 @@ def read_user_me(current_user: models.User = Depends(get_current_user)):
 
 @router.get("/{user_id}", response_model=UserResponse)
 def read_user(
-        user_id: int,
+        user_id: str,
         db: Session = Depends(get_db),
         current_user: models.User = Depends(get_current_user)
 ):
@@ -68,7 +68,7 @@ def update_user_me(
 
 @router.put("/{user_id}", response_model=UserResponse)
 def update_user(
-        user_id: int,
+        user_id: str,
         user: UserUpdate,
         db: Session = Depends(get_db),
         current_user: models.User = Depends(get_current_user)
