@@ -63,6 +63,7 @@ class UserIdCheck(BaseModel):
     user_id: str = Field(..., min_length=3, max_length=50)
 
 
+
 class FindUserId(BaseModel):
     """
     아이디 찾기 요청 모델

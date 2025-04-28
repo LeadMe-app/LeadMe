@@ -51,7 +51,7 @@ class WordFavorites(Base):
     __tablename__ = "word_favorites"
 
     favorite_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     word_id = Column(Integer, ForeignKey("word_list.word_id"), nullable=False)
 
     # 관계 설정
@@ -64,7 +64,7 @@ class SpeedAnalysis(Base):
     __tablename__ = "speed_analysis"
 
     analysis_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     spm = Column(Integer, nullable=False)
     speed_category = Column(String(20), nullable=False)
     analysis_date = Column(Date, nullable=False)
@@ -92,7 +92,7 @@ class AgeGroupSpeechRate(Base):
 class UserSettings(Base):
     __tablename__ = "user_settings"
 
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(String, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
     selected_speech_rate = Column(Integer, nullable=False)
 
     # 관계 설정
@@ -104,7 +104,7 @@ class SpeechSession(Base):
     __tablename__ = "speech_sessions"
 
     session_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     session_date = Column(DateTime, default=datetime.datetime.utcnow)
 
     # 관계 설정
