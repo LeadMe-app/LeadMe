@@ -21,8 +21,8 @@ const FindIDScreen = ({ navigation }) => {
         return;
     }
     try {
-        const res = await axiosInstance.post("/api/auth/find-username", {
-          nickname: nickname,
+        const res = await axiosInstance.post("/api/auth/find-userid", {
+          username: nickname,
           phone_number: phone,
         },
         {
@@ -31,8 +31,8 @@ const FindIDScreen = ({ navigation }) => {
             },
           });
   
-        const { username } = res.data;
-        setMessage(`아이디는 ${username} 입니다.`);
+        const { user_id } = res.data;
+        setMessage(`아이디는 ${user_id} 입니다.`);
       } catch (err) {
         console.error("아이디 찾기 실패:", err.response?.data || err);
         setMessage("회원정보가 존재하지 않습니다.");

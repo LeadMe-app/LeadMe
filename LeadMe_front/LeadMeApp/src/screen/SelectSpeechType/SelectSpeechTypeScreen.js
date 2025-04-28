@@ -11,7 +11,7 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={[styles.optionBox, { backgroundColor: '#FFD8A9' }]}
-        onPress={() => navigation.navigate('FreeSpeech')}
+        onPress={() => navigation.navigate('FreeSpeechScreen')}
       >
         <Text style={styles.optionTitle}>직접 발화</Text>
         <Text style={styles.optionSubtitle}>자유롭게 말합니다</Text>

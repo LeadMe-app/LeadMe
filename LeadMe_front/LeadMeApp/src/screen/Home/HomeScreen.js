@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity,  } from 'react-native';
 import { styles } from './styles';
 import Logo from '../../components/Logo';
-import Icon from '../../icons/home_icons.svg'
+import Icon from '../../icons/home_icons.svg';
 
 const HomeScreen = ({ route, navigation }) => {
-    const { nickname } = route.params;
+    const { username } = route.params;
     return (
     <View style={styles.container}>
       <Logo/>
@@ -14,7 +14,7 @@ const HomeScreen = ({ route, navigation }) => {
         <Icon width={80} height={80} marginRight={15}/>
         <View>
         <Text style={styles.greeting}>
-         <Text  ext style={styles.nickname}>{nickname}</Text> 님 반갑습니다.
+         <Text  ext style={styles.nickname}>{username}</Text> 님 반갑습니다.
       </Text>
       <Text style={styles.link} onPress={() => navigation.navigate('ProfileScreen')}>
         학습 내용 확인하기

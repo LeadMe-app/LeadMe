@@ -38,14 +38,14 @@ const EditProfileScreen = ({ navigation }) => {
         });
   
         const {
+          user_id,
           username,
-          nickname,
           phone_number,
           age_group,
         } = userInfoRes.data;
   
-        setUserId(username);
-        setNickname(nickname);
+        setUserId(user_id);
+        setNickname(username);
         setPhone(phone_number);
         setAgeGroup(age_group);
       } catch (error) {
@@ -87,8 +87,8 @@ const EditProfileScreen = ({ navigation }) => {
   const validatePhone = (text) => {
     const clean = text.replace(/[^0-9]/g, '');
     setPhone(clean);
-    if (clean.length < 10 || clean.length > 11) {
-      setPhoneError('전화번호는 10자리 또는 11자리여야 합니다.');
+    if (clean.length < 10 && clean.length > 17) {
+      setPhoneError('전화번호는 10자리 이상 16자리 이하이어야 합니다.');
     } else {
       setPhoneError('');
     }
@@ -123,7 +123,7 @@ const EditProfileScreen = ({ navigation }) => {
       const token = await AsyncStorage.getItem('access_token');
 
       const updateData = {
-        nickname,
+        username: nickname,
         phone_number: phone,
         age_group: ageGroup,
       };

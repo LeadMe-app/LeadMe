@@ -21,7 +21,7 @@ const FindPWScreen = ({ navigation }) => {
         return;
     }try {
         const res = await axiosInstance.post("/api/auth/verify-reset-user", {
-          username: userId,
+          user_id: userId,
           phone_number: phone,
         },
         {
@@ -31,7 +31,7 @@ const FindPWScreen = ({ navigation }) => {
           });
   
           navigation.navigate("ResetPW", {
-            username: userId,
+            user_id: userId,
             phone_number: phone,
           });
       } catch (err) {

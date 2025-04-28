@@ -15,5 +15,6 @@ export const COLORS = {
     textPrimary: '#000000',
     textSecondary: '#333333',
     boxBackground: '#C1E1C1',
+    blue: '#A9D0FF',
 };
   

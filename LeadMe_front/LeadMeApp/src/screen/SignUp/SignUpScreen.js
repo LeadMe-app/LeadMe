@@ -37,8 +37,8 @@ const SignUpScreen = ({navigation}) => {
     }
   
     try {
-      const response = await axiosInstance.post('/api/auth/check-username', {
-        username: userId.trim() 
+      const response = await axiosInstance.post('/api/auth/check-userid', {
+        user_id: userId.trim() 
       });
   
       if (response.data.available === false) {
@@ -81,31 +81,33 @@ const SignUpScreen = ({navigation}) => {
       newErrors.password = '비밀번호가 일치하지 않습니다.';
       valid = false;
     }
-
+    
     setErrors(newErrors);
 
     if (valid) {
       try {
         const res = await axiosInstance.post('/api/auth/register', {
-          username: userId,
+          user_id: userId,
+          username : nickname,
           password: password,
           password_confirm : confirmPw, //검증 위해서 필요
           phone_number: phone,
-          nickname : nickname,
           age_group: age,
         },
+        
         {
           headers: {
             'Content-Type': 'application/json', 
           },
         }
       );
-        
         console.log('회원가입 성공:', res.data);
         //navigation.navigate('SignUpSuccess', {nickname}); // 모달로 바꾸면 좋을 것 같아요!
         setModalVisible(true, {nickname});
       }catch (err) {
-        //console.error(err.response?.data || err);
+        console.error('회원가입 에러 전체', err);
+        console.error('err.response:', err.response);
+        console.error('err.message: ', err.message);
         console.log("에러 응답:", err.response?.data);
         setErrors((prev) => ({
           ...prev,

@@ -12,7 +12,7 @@ import { styles } from './styles';
 import Logo from '../../components/Logo';
 
 const ResetPWScreen = ({ route, navigation }) => {
-  const { username } = route.params;
+  const { user_id } = route.params;
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -43,7 +43,7 @@ const ResetPWScreen = ({ route, navigation }) => {
     if (valid) {
       try {
         const res = await axiosInstance.post("/api/auth/reset-password", {
-          username: username,
+          user_id: user_id,
           new_password: newPassword,
           new_password_confirm: confirmPassword,
         });
