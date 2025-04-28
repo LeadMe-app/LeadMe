@@ -12,6 +12,7 @@ import asyncio
 
 # 내부 모듈 임포트
 from database import get_db
+from app import models, schemas
 import models
 from app.core.security import (
     verify_password,
@@ -285,28 +286,32 @@ async def read_users_me(current_user: models.User = Depends(get_current_user)):
     return TokenData(user_id=current_user.user_id)
 
 
-@router.post("/check-userid")
+@router.post("/check-userid", response_model=schemas.CheckUserIdResponse)
 async def check_user_id(
-        user_id_check: UserIdCheck,
-        db: Session = Depends(get_db)
+    user_id_check: schemas.UserIdCheck,  # .schemas 에 username: str 로 정의됨
+    db: Session = Depends(get_db)
 ):
-    """
-    사용자 ID 중복 확인
+    # 디버깅: 실제 payload가 어떻게 넘어오는지 찍어보기
+    print("DEBUG payload:", user_id_check.dict())
 
-    Args:
-        user_id_check: 확인할 사용자 ID
-        db: 데이터베이스 세션
+    # ❗️ 여기서 user_id 대신 username 컬럼으로 필터링
+    existing = (
+        db.query(models.User)
+          .filter(models.User.username == user_id_check.username)
+          .first()
+    )
 
-    Returns:
-        Dict: 사용 가능 여부
-    """
-    db_user = db.query(models.User).filter(models.User.user_id == user_id_check.user_id).first()
-
-    if db_user:
-        return {"available": False, "message": "이미 사용 중인 사용자 ID입니다."}
-
-    return {"available": True, "message": "사용 가능한 사용자 ID입니다."}
-
+    if existing:
+        return schemas.CheckUserIdResponse(
+            exists=True,
+            available=False,
+            message="이미 사용 중인 사용자명입니다."
+        )
+    return schemas.CheckUserIdResponse(
+        exists=False,
+        available=True,
+        message="사용 가능한 사용자명입니다."
+    )
 
 @router.post("/find-userid")
 async def find_user_id(
