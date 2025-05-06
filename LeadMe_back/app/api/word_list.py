@@ -3,7 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os
+import random
 from datetime import datetime
+from sqlalchemy import func
 
 # 내부 모듈 임포트
 from database import get_db
@@ -12,34 +14,7 @@ from schemas.word import WordListCreate, WordListResponse, WordFavoriteCreate, W
 
 router = APIRouter()
 
-
-@router.post("/", response_model=WordListResponse, status_code=status.HTTP_201_CREATED)
-def create_word(
-        word: WordListCreate,
-        db: Session = Depends(get_db)
-):
-    """새로운 단어를 단어 목록에 추가합니다."""
-    # 이미 존재하는 단어인지 확인
-    db_word = db.query(models.WordList).filter(models.WordList.word == word.word).first()
-    if db_word:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="이미 등록된 단어입니다."
-        )
-
-    # 새 단어 생성
-    db_word = models.WordList(
-        word=word.word,
-        image_url=word.image_url
-    )
-
-    db.add(db_word)
-    db.commit()
-    db.refresh(db_word)
-
-    return db_word
-
-
+'''단어 리스트 전체 제공'''
 @router.get("/", response_model=List[WordListResponse])
 def read_words(
         skip: int = 0,
@@ -51,6 +26,7 @@ def read_words(
     return words
 
 
+'''특정 단어 반환'''
 @router.get("/{word_id}", response_model=WordListResponse)
 def read_word(
         word_id: int,
@@ -66,47 +42,29 @@ def read_word(
     return db_word
 
 
-@router.put("/{word_id}", response_model=WordListResponse)
-def update_word(
-        word_id: int,
-        word: WordListCreate,
-        db: Session = Depends(get_db)
-):
-    """단어 정보를 업데이트합니다."""
-    db_word = db.query(models.WordList).filter(models.WordList.word_id == word_id).first()
-    if db_word is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 단어를 찾을 수 없습니다."
-        )
+'''랜덤 단어 제공 (즐겨찾기 여부 포함)'''
+@router.get("/random", response_model=WordListResponse)
+def get_random_word(user_id: str, db: Session = Depends(get_db)):
+    """무작위로 단어 하나를 반환하고, 즐겨찾기 상태도 함께 제공합니다."""
+    
+    random_word = db.query(models.WordList).order_by(func.random()).first()
+    if random_word is None:
+        raise HTTPException(status_code=404, detail="단어가 없습니다.")
+    
+    # 사용자의 즐겨찾기 여부 확인
+    is_favorite = db.query(models.WordFavorites).filter(
+        models.WordFavorites.user_id == user_id,
+        models.WordFavorites.word_id == random_word.word_id
+    ).first()
 
-    # 업데이트할 데이터 설정
-    for key, value in word.dict().items():
-        setattr(db_word, key, value)
+    return {
+        "word_id": random_word.word_id,
+        "word": random_word.word,
+        "image_url": random_word.image_url,
+        "is_favorite": bool(is_favorite)  # 즐겨찾기 여부를 응답에 추가
+    }
 
-    db.commit()
-    db.refresh(db_word)
-    return db_word
-
-
-@router.delete("/{word_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_word(
-        word_id: int,
-        db: Session = Depends(get_db)
-):
-    """단어를 삭제합니다."""
-    db_word = db.query(models.WordList).filter(models.WordList.word_id == word_id).first()
-    if db_word is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 단어를 찾을 수 없습니다."
-        )
-
-    db.delete(db_word)
-    db.commit()
-    return None
-
-
+'''
 @router.post("/upload/image/")
 async def upload_word_image(
         file: UploadFile = File(...),
@@ -143,8 +101,9 @@ async def upload_word_image(
         "image_url": f"/uploads/images/{filename}",
         "message": "이미지가 성공적으로 업로드되었습니다."
     }
+'''
 
-
+''' 즐겨찾기 추가'''
 @router.post("/favorites/", response_model=WordFavoriteResponse, status_code=status.HTTP_201_CREATED)
 def add_word_to_favorites(
         favorite: WordFavoriteCreate,
@@ -192,6 +151,7 @@ def add_word_to_favorites(
     return db_favorite
 
 
+''' 즐겨찾기 리스트 조회'''
 @router.get("/favorites/", response_model=List[WordFavoriteResponse])
 def read_favorites(
         user_id: Optional[str] = None,
@@ -209,6 +169,7 @@ def read_favorites(
     return favorites
 
 
+'''즐겨찾기 삭제'''
 @router.delete("/favorites/{favorite_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_favorite(
         favorite_id: int,
