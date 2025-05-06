@@ -1,4 +1,6 @@
 import openai
+from openai.error import OpenAIError, RateLimitError, APIError, APIConnectionError, InvalidRequestError, AuthenticationError, Timeout
+
 import os
 import asyncio
 import time
@@ -41,18 +43,40 @@ def generate_prompt(age_group: str) -> str:
 async def get_sentence_for_age_group(age_group: str) -> str:
     prompt = generate_prompt(age_group)
 
-    response = await asyncio.to_thread(
-        openai.ChatCompletion.create,  
-        model="gpt-3.5-turbo",  # 모델 선택
-        messages=[{"role": "user", "content": prompt}],  # 사용자 메시지
-    )
+    try:
+        response = await asyncio.to_thread(
+            openai.ChatCompletion.create,
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+        )
 
-    # 응답이 없으면 오류 처리
-    if not response.get('choices'):
-        raise ValueError("OpenAI 응답에 선택지가 없습니다.")
+        # 응답이 없으면 오류 처리
+        if not response.get('choices'):
+            raise ValueError("OpenAI 응답에 선택지가 없습니다.")
         
-    # 응답 반환
-    return response['choices'][0]['message']['content'].strip() 
+        # 응답 반환
+        return response['choices'][0]['message']['content'].strip()
+
+    except RateLimitError:
+        return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."
+
+    except AuthenticationError:
+        return "OpenAI 인증 오류가 발생했습니다. API 키를 확인해주세요."
+
+    except Timeout:
+        return "OpenAI 요청이 시간 초과되었습니다."
+
+    except InvalidRequestError as e:
+        return f"잘못된 요청입니다: {str(e)}"
+
+    except APIConnectionError:
+        return "OpenAI 서버에 연결할 수 없습니다."
+
+    except APIError:
+        return "OpenAI 서버 오류가 발생했습니다."
+
+    except OpenAIError as e:
+        return f"OpenAI 오류 발생: {str(e)}"
 
 # 속도 값 계산
 def get_speed(age_group: str, speed_label: str) -> float:
