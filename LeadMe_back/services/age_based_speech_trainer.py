@@ -1,5 +1,4 @@
 import openai
-from openai import OpenAIError, RateLimitError, Timeout
 import os
 import asyncio
 import time
@@ -42,30 +41,18 @@ def generate_prompt(age_group: str) -> str:
 async def get_sentence_for_age_group(age_group: str) -> str:
     prompt = generate_prompt(age_group)
 
-    try:
-        response = await asyncio.to_thread(
-            openai.ChatCompletion.create,  
-            model="gpt-3.5-turbo",  # 모델 선택
-            messages=[{"role": "user", "content": prompt}],  # 사용자 메시지
-        )
+    response = await asyncio.to_thread(
+        openai.ChatCompletion.create,  
+        model="gpt-3.5-turbo",  # 모델 선택
+        messages=[{"role": "user", "content": prompt}],  # 사용자 메시지
+    )
 
-        # 응답이 없으면 오류 처리
-        if not response.get('choices'):
-            raise ValueError("OpenAI 응답에 선택지가 없습니다.")
+    # 응답이 없으면 오류 처리
+    if not response.get('choices'):
+        raise ValueError("OpenAI 응답에 선택지가 없습니다.")
         
-        # 응답 반환
-        return response['choices'][0]['message']['content'].strip()  # 구 버전 구조에 맞게 수정
-
-    except RateLimitError:
-        return "API 호출 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요."
-    except TimeoutError:
-        return "요청 시간이 초과되었습니다. 다시 시도해주세요."
-    except OpenAIError as e:
-        return f"OpenAI API 오류 발생: {str(e)}"
-    except ValueError as e:
-        return f"응답 오류: {str(e)}"
-    except Exception as e:
-        return f"알 수 없는 오류가 발생했습니다: {str(e)}"
+    # 응답 반환
+    return response['choices'][0]['message']['content'].strip() 
 
 # 속도 값 계산
 def get_speed(age_group: str, speed_label: str) -> float:

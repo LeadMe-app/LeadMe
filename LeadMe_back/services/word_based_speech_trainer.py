@@ -1,5 +1,4 @@
 import openai
-from openai.error import OpenAIError, RateLimitError, TimeoutError
 import os
 import asyncio
 import time
@@ -23,27 +22,17 @@ def generate_prompt(age_group: str) -> str:
 async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
     prompt = f'"{word}"라는 단어를 포함해서 {generate_prompt(age_group)}'
     
-    try:
-        response = await asyncio.to_thread(
+    response = await asyncio.to_thread(
             openai.ChatCompletion.create,
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
 
-        # 응답이 없다면 오류 처리
-        if not response.choices:
-            raise ValueError("OpenAI 응답에 선택지가 없습니다.")
+    # 응답이 없다면 오류 처리
+    if not response.choices:
+        raise ValueError("OpenAI 응답에 선택지가 없습니다.")
         
-        return response.choices[0].message.content.strip()
-
-    except RateLimitError:
-        return "API 호출 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요."
-    except TimeoutError:
-        return "요청 시간이 초과되었습니다. 다시 시도해주세요."
-    except OpenAIError as e:
-        return f"OpenAI API 오류 발생: {str(e)}"
-    except Exception as e:
-        return f"알 수 없는 오류가 발생했습니다: {str(e)}"
+    return response.choices[0].message.content.strip()
 
 '''# 예시 메인 실행 함수
 async def main():
