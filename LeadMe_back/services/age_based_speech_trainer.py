@@ -1,6 +1,6 @@
 import openai
 from openai.error import OpenAIError, RateLimitError, APIError, APIConnectionError, InvalidRequestError, AuthenticationError, Timeout
-
+import logging
 import os
 import asyncio
 import time
@@ -8,6 +8,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# 로그 설정
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)  # 로그 레벨 설정 (INFO, ERROR 등)
+
+# 콘솔에 로그 출력 설정
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)  # 콘솔에 출력할 최소 로그 레벨 설정
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
 
 # 연령대별 속도 맵 (단어 수 기준)
 age_group_speed_map = {
@@ -58,24 +70,31 @@ async def get_sentence_for_age_group(age_group: str) -> str:
         return response['choices'][0]['message']['content'].strip()
 
     except RateLimitError:
+        logger.error("RateLimitError: 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
         return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."
 
     except AuthenticationError:
+        logger.error("AuthenticationError: OpenAI 인증 오류가 발생했습니다. API 키를 확인해주세요.")
         return "OpenAI 인증 오류가 발생했습니다. API 키를 확인해주세요."
 
     except Timeout:
+        logger.error("Timeout: OpenAI 요청이 시간 초과되었습니다.")
         return "OpenAI 요청이 시간 초과되었습니다."
 
     except InvalidRequestError as e:
+        logger.error(f"InvalidRequestError: 잘못된 요청입니다: {str(e)}")
         return f"잘못된 요청입니다: {str(e)}"
 
     except APIConnectionError:
+        logger.error("APIConnectionError: OpenAI 서버에 연결할 수 없습니다.")
         return "OpenAI 서버에 연결할 수 없습니다."
 
     except APIError:
+        logger.error("APIError: OpenAI 서버 오류가 발생했습니다.")
         return "OpenAI 서버 오류가 발생했습니다."
 
     except OpenAIError as e:
+        logger.error(f"OpenAIError: {str(e)}")
         return f"OpenAI 오류 발생: {str(e)}"
 
 # 속도 값 계산

@@ -1,4 +1,7 @@
+import logging
 import openai
+from openai import OpenAIError
+from openai.error import RateLimitError
 import os
 import asyncio
 import time
@@ -6,6 +9,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# 로그 설정
+logger = logging.getLogger("sentence_generation")
+logger.setLevel(logging.INFO)  # INFO 이상 레벨만 출력
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # 연령대에 맞는 프롬프트 생성
 def generate_prompt(age_group: str) -> str:
@@ -19,20 +30,35 @@ def generate_prompt(age_group: str) -> str:
         return "발음 연습용 쉬운 한국어어 문장을 만들어줘."
     
 
+# GPT 문장 생성 함수 (단어 + 연령대 기반)
 async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
     prompt = f'"{word}"라는 단어를 포함해서 {generate_prompt(age_group)}'
-    
-    response = await asyncio.to_thread(
+    logger.info(f"프롬프트 생성: {prompt}")
+
+    try:
+        response = await asyncio.to_thread(
             openai.ChatCompletion.create,
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
 
-    # 응답이 없다면 오류 처리
-    if not response.choices:
-        raise ValueError("OpenAI 응답에 선택지가 없습니다.")
-        
-    return response.choices[0].message.content.strip()
+        if not response.get("choices"):
+            logger.error("OpenAI 응답에 선택지가 없습니다.")
+            raise ValueError("OpenAI 응답에 선택지가 없습니다.")
+
+        content = response["choices"][0]["message"]["content"].strip()
+        logger.info(f"GPT 응답 수신 완료: {content}")
+        return content
+
+    except RateLimitError:
+        logger.warning("RateLimitError: 호출이 너무 많습니다.")
+        raise RuntimeError("OpenAI API 호출이 너무 많습니다. 잠시 후 다시 시도해주세요.")
+    except OpenAIError as e:
+        logger.error(f"OpenAIError 발생: {str(e)}")
+        raise RuntimeError(f"OpenAI 오류가 발생했습니다: {str(e)}")
+    except Exception as e:
+        logger.exception("예기치 못한 오류 발생")
+        raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
 
 '''# 예시 메인 실행 함수
 async def main():
