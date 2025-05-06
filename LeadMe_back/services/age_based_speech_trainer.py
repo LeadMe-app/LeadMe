@@ -1,5 +1,5 @@
 import openai
-from openai.error import OpenAIError, RateLimitError, TimeoutError
+from openai import OpenAIError, RateLimitError, Timeout
 import os
 import asyncio
 import time
