@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# services/__init__.py
 from services.naver_clova import NaverClovaService
 from services.opensmile import OpenSmileService
 import os
@@ -11,6 +11,4 @@ load_dotenv()
 naver_clova = NaverClovaService()
 
 # OpenSMILE 서비스 초기화
-opensmile_path = os.getenv("OPENSMILE_PATH")
-opensmile_config = os.getenv("OPENSMILE_CONFIG_PATH")
-opensmile = OpenSmileService(opensmile_path, opensmile_config)
+opensmile = OpenSmileService()
