@@ -16,59 +16,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
   },
-  sentenceActive: {
-    color: COLORS.errorText,
-  },
-  dropdown: {
-    width: '70%',
-    height: 40,
-    backgroundColor: COLORS.inputBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 15,
-    borderRadius: 5,
-    marginLeft: 20
-  },
-  dropdownText: {
-    color: COLORS.textGray,
-  },
-  topRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    width : '90%',
-  },
-  startButton: {
-    marginTop: 30,
-    width: '80%',
-    height: 100,
-    backgroundColor: COLORS.checkButton,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    marginVertical: 20,
-  },
-  stopButton: {
-    marginTop: 30,
-    width: '80%',
-    height: 100,
-    backgroundColor: COLORS.blue,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    marginVertical: 20,
-  },
-  practiceButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.textPrimary,
-  },
   iconRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     width: '70%',  // 아이콘 그룹 가로폭
-    marginTop: 30,
+    marginTop: 150,
   },
   
   iconWithLabel: {

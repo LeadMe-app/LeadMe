@@ -15,6 +15,8 @@ import HomeScreen from './src/screen/Home/HomeScreen';
 import ProfileScreen from './src/screen/Profile/ProfileScreen';
 import SentenceSpeech from './src/screen/Sentence/SentenceSpeech';
 import FreeSpeechScreen from './src/screen/FreeSpeechScreen/FreeSpeechScreen';
+import WordScreen from './src/screen/WordScreen/WordScreen';
+import WordSentence from './src/screen/WordSentence/WordSentence';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +37,8 @@ export default function App() {
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} options={{ headerShown: false }} />
         <Stack.Screen name="SentenceSpeech" component={SentenceSpeech} options={{headerShown: false}} />
         <Stack.Screen name="FreeSpeechScreen" component={FreeSpeechScreen} options={{headerShown: false}} />
+        <Stack.Screen name="WordScreen" component={WordScreen} options={{headerShown: false}} />
+        <Stack.Screen name="WordSentence" component={WordSentence} options={{headerShown: false}} />
       </Stack.Navigator>
     </NavigationContainer>
   );

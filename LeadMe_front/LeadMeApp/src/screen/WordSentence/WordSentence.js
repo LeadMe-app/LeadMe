@@ -7,13 +7,8 @@ import Micro from '../../icons/microphone_icons.svg';
 import Stop from '../../icons/stop_icons.svg';
 import Play from '../../icons/play_icons.svg';
 
-const SentenceSpeech = ({navigation}) => {
-  const [isPracticing, setIsPracticing] = useState(false);
+const WordSentence = ({navigation}) => {
   const [isRecording, setIsRecording] = useState(false);
-
-  const handlePracticeToggle = () => {
-    setIsPracticing(prev => !prev);
-  };
 
   const handleRecordToggle = () => {
     setIsRecording(prev => !prev);
@@ -28,30 +23,16 @@ const SentenceSpeech = ({navigation}) => {
   return (
     <View style={styles.container}>
       <Logo />
-      <Text style={[styles.sentence, isPracticing && styles.sentenceActive]}>
+      <Text style={[styles.sentence]}>
         나는 <Text style={styles.boldText}>천천히 또박또박</Text> 말하는 연습을 하고 있어요.
       </Text> 
 
       <View style={styles.underline} />
 
-      <View style={styles.topRow}>
-        <TouchableOpacity>
-          <Sound width={40} height={40} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.dropdown}>
-          <Text style={styles.dropdownText}>원하는 속도를 선택하세요</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <TouchableOpacity 
-        style={isPracticing ? styles.stopButton : styles.startButton}
-        onPress={handlePracticeToggle}
-      >
-        <Text style={styles.practiceButtonText}>
-          {isPracticing ? '연습 종료' : '연습 시작'}
-        </Text>
+      <TouchableOpacity>
+        <Sound width={40} height={40} marginTop={30}/>
       </TouchableOpacity>
-
+      
       {/* 녹음 & 재생 아이콘 */}
       <View style={styles.iconRow}>
         <TouchableOpacity onPress={handleRecordToggle}  >
@@ -71,7 +52,7 @@ const SentenceSpeech = ({navigation}) => {
 
       <View style={styles.bottomButtons}>
         <TouchableOpacity style={styles.endButton} onPress={() => navigation.navigate('SelectSpeechTypeScreen')}>
-          <Text style={styles.bottomButtonText}>치료 종료</Text>
+          <Text style={styles.bottomButtonText}>문장연습 종료</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.otherButton}>
           <Text style={styles.bottomButtonText}>다른 문장</Text>
@@ -81,4 +62,4 @@ const SentenceSpeech = ({navigation}) => {
   );
 };
 
-export default SentenceSpeech;
+export default WordSentence;

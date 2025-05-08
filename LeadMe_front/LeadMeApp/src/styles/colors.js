@@ -12,9 +12,11 @@ export const COLORS = {
     experienceButton: '#2ECC71', 
     white: '#fff', //흰색
     boxShadow: '#000000', // 박스 그림자
-    textPrimary: '#000000',
+    textPrimary: '#000000', //검정
     textSecondary: '#333333',
     boxBackground: '#C1E1C1',
     blue: '#A9D0FF',
+    redBox: '#980000',
+    BlueBox : '#0E0F37',
 };
   
