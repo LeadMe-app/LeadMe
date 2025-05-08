@@ -9,9 +9,18 @@ export const styles = StyleSheet.create({
       justifyContent: 'center',
       padding: 20,
     },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF6EB',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
   iconRow: {
-    flexDirection: 'row',
+    flexDirection: 'row', // 가로 방향 정렬
     justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: '20%',
     marginBottom: 30,
     gap: 50,
   },
@@ -24,13 +33,16 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 30, // 아이콘과 발화속도 상자 간 간격
   },
   resultBox: {
     backgroundColor: '#FFD8A9',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 10,
+    width: '70%', // 적당히 폭 조정
+    alignItems: 'center',
   },
   resultTitle: {
     fontSize: 16,

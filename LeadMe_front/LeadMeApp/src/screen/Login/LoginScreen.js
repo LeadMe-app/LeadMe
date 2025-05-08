@@ -49,8 +49,6 @@ const LoginScreen = ({ navigation }) => {
       });
   
       const { username } = userInfoRes.data;
-  
-      console.log('닉네임:', username);
 
       console.log('로그인 성공 및 토큰 저장 완료!', res.data);
       navigation.navigate('HomeScreen', { username });

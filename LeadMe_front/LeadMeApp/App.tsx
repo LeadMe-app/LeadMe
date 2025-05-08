@@ -17,11 +17,13 @@ import SentenceSpeech from './src/screen/Sentence/SentenceSpeech';
 import FreeSpeechScreen from './src/screen/FreeSpeechScreen/FreeSpeechScreen';
 import WordScreen from './src/screen/WordScreen/WordScreen';
 import WordSentence from './src/screen/WordSentence/WordSentence';
+import {FavoriteProvider, FavoriteWordsScreen} from './src/screen/FavoriteWordsScreen/FavoriteWordsScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
+  <FavoriteProvider>
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
@@ -37,9 +39,11 @@ export default function App() {
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} options={{ headerShown: false }} />
         <Stack.Screen name="SentenceSpeech" component={SentenceSpeech} options={{headerShown: false}} />
         <Stack.Screen name="FreeSpeechScreen" component={FreeSpeechScreen} options={{headerShown: false}} />
+        <Stack.Screen name="FavoriteWordsScreen" component={FavoriteWordsScreen} options={{headerShown: false}} />
         <Stack.Screen name="WordScreen" component={WordScreen} options={{headerShown: false}} />
         <Stack.Screen name="WordSentence" component={WordSentence} options={{headerShown: false}} />
       </Stack.Navigator>
     </NavigationContainer>
+  </FavoriteProvider>
   );
 }

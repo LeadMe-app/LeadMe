@@ -1,10 +1,30 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, } from 'react-native';
-import BackButton from '../../components/BackButton';
-import {styles} from './styles';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { styles } from './styles';
 import Logo from '../../components/Logo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axiosInstance from '../../config/axiosInstance';
 
 const SelectSpeechTypeScreen = ({ navigation }) => {
+  const handleGoBack = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (token) {
+        const res = await axiosInstance.get('/api/users/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const username = res.data.username;
+        navigation.navigate('HomeScreen', { username });
+      } else {
+        console.warn('토큰이 없습니다.');
+      }
+    } catch (error) {
+      console.error('사용자 정보를 불러오지 못했습니다:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Logo />
@@ -25,8 +45,9 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
         <Text style={styles.optionSubtitle}>제공된 문장을 따라 읽습니다</Text>
       </TouchableOpacity>
 
-
-      <BackButton />
+      <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
+        <Text style={styles.backText}>뒤로 가기</Text>
+      </TouchableOpacity>
     </View>
   );
 };

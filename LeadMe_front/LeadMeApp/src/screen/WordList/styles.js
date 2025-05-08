@@ -5,17 +5,17 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background, // 배경색
-    alignItems: 'center',
     paddingTop: 60,
     paddingHorizontal: 20,
   },
   optionBox: {
-    width: '48%',
+    width: '100%',
     borderRadius: 16,
-    paddingVertical: 60,
+    paddingVertical: 30,
     alignItems: 'center',
     shadowColor: COLORS.boxShadow,
     elevation: 4,
+    marginBottom: 30,
   },
   optionTitle: {
     fontSize: 20,
@@ -26,11 +26,5 @@ export const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: 14,
     color: COLORS.textSecondary, // 서브 텍스트 색상
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 50,
   },
 });
