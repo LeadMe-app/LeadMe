@@ -9,24 +9,24 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 20,
       },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      marginBottom: 20,
-    },
-    empty: {
-      fontSize: 18,
-      color: '#888',
-    },
-    wordButton: {
-      backgroundColor: '#FFE5B4',
-      padding: 16,
-      marginVertical: 8,
-      borderRadius: 10,
-      width: '100%',
-      alignItems: 'center',
-    },
-    wordText: {
-      fontSize: 18,
-    },
+      title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+      },
+      empty: {
+        fontSize: 18,
+        color: '#888',
+      },
+      wordButton: {
+        backgroundColor: '#FFE5B4',
+        padding: 16,
+        marginVertical: 8,
+        borderRadius: 10,
+        width: '100%',
+        alignItems: 'center',
+      },
+      wordText: {
+        fontSize: 18,
+      },
   });

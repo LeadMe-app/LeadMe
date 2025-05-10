@@ -41,6 +41,7 @@ const LoginScreen = ({ navigation }) => {
 
       {/* 로그인 성공 시 토큰 저장 */}
       await AsyncStorage.setItem('access_token', access_token);
+      await AsyncStorage.setItem('userId', userId.toString()); 
 
       const userInfoRes = await axiosInstance.get('/api/users/me', {
         headers: {

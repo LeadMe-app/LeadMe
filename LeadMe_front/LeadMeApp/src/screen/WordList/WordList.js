@@ -66,7 +66,7 @@ const WordList = ({ navigation }) => {
           <TouchableOpacity
             key={wordItem.word_id}
             style={[styles.optionBox, { backgroundColor: colors[index % colors.length] }]}
-            onPress={() => navigation.navigate(wordItem.word)}
+            onPress={() => navigation.navigate('WordScreen',{ wordId: wordItem.word_id })}
           >
             <Text style={styles.optionTitle}>{wordItem.word}</Text>
           </TouchableOpacity>
