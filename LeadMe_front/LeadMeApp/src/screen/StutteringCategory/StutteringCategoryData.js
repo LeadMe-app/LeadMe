@@ -27,7 +27,7 @@ const SelectWordModeScreen = ({ navigation }) => {
 
       <TouchableOpacity
         style={styles.fullWidthBox}
-        onPress={() => navigation.navigate('FavoriteWords')}
+        onPress={() => navigation.navigate('FavoriteWordsScreen')}
       >
         <Text style={styles.fullWidthText}>즐겨찾기 단어</Text>
       </TouchableOpacity>

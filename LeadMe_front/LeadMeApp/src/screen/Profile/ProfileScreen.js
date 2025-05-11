@@ -39,7 +39,10 @@ const ProfileScreen = ({ navigation }) => {
         <Icon width={80} height={80}/>
         <Text style = {styles.menuText} marginBottom ={10}> 프로필 </Text>
       <View style={styles.menuContainer}>
-        <TouchableOpacity style={styles.menuItem} >
+        <TouchableOpacity
+         style={styles.menuItem}
+         onPress = {() => navigation.navigate('FavoriteWordsScreen')}
+        >
           <Text style={styles.menuText}>단어 즐겨찾기</Text>
         </TouchableOpacity>
 

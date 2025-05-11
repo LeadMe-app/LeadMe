@@ -1,4 +1,7 @@
 {
   "name": "LeadMeApp",
-  "displayName": "LeadMeApp"
+  "displayName": "LeadMeApp",
+  "plugins": [
+    "expo-font"
+  ]
 }

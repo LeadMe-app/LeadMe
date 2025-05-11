@@ -21,13 +21,14 @@ const UnSubscribeModal = ({ visible, onClose, navigation={navigation} }) => {
         },
       });
 
-      const userId = userInfoRes.data.user_id;
+      const user_id = userInfoRes.data.user_id;
 
       // 탈퇴 요청 보내기
-      await axiosInstance.delete(`/api/users/${userId}`, {
+      await axiosInstance.delete(`/api/users/${user_id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        data: {},
       });
 
       Alert.alert('알림', '회원탈퇴가 완료되었습니다.');
