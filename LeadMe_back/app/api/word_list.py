@@ -202,19 +202,28 @@ def read_favorites(
 
 
 '''즐겨찾기 삭제'''
-@router.delete("/favorites/{favorite_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/favorites/", status_code=status.HTTP_204_NO_CONTENT)
 def delete_favorite(
-        favorite_id: int,
+        user_id: str,  # 사용자 ID
+        word_id: int,  # 단어 ID
         db: Session = Depends(get_db)
 ):
-    """즐겨찾기에서 단어를 제거합니다."""
-    db_favorite = db.query(models.WordFavorites).filter(models.WordFavorites.favorite_id == favorite_id).first()
+    """사용자의 즐겨찾기에서 단어를 제거합니다."""
+    # 사용자와 단어에 대한 즐겨찾기 조회
+    db_favorite = db.query(models.WordFavorites).filter(
+        models.WordFavorites.user_id == user_id,
+        models.WordFavorites.word_id == word_id
+    ).first()
+
+    # 즐겨찾기 항목이 없으면 에러 반환
     if db_favorite is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="해당 즐겨찾기를 찾을 수 없습니다."
         )
 
+    # 즐겨찾기 삭제
     db.delete(db_favorite)
     db.commit()
+
     return None
