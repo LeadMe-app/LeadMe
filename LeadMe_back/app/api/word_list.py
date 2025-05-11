@@ -17,13 +17,33 @@ router = APIRouter()
 '''단어 리스트 전체 제공'''
 @router.get("/", response_model=List[WordListResponse])
 def read_words(
+        user_id: Optional[str] = None,  # ← user_id 쿼리 파라미터로 받음
         skip: int = 0,
         limit: int = 100,
         db: Session = Depends(get_db)
 ):
-    """모든 단어 목록을 반환합니다."""
+    """모든 단어 목록을 반환하며, user_id가 주어지면 즐겨찾기 여부도 포함합니다."""
     words = db.query(models.WordList).offset(skip).limit(limit).all()
-    return words
+
+    # 즐겨찾기 정보 미리 조회
+    favorite_word_ids = set()
+    if user_id:
+        favorites = db.query(models.WordFavorites.word_id).filter(
+            models.WordFavorites.user_id == user_id
+        ).all()
+        favorite_word_ids = set(fav.word_id for fav in favorites)
+
+    # is_favorite 포함한 응답 리스트 구성
+    result = []
+    for word in words:
+        result.append({
+            "word_id": word.word_id,
+            "word": word.word,
+            "image_url": word.image_url,
+            "is_favorite": word.word_id in favorite_word_ids
+        })
+
+    return result
 
 
 '''특정 단어 반환'''

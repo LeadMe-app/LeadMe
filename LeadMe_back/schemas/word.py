@@ -17,7 +17,8 @@ class WordListCreate(WordListBase):
 # 단어 응답 모델
 class WordListResponse(WordListBase):
     word_id: int
-
+    is_favorite: bool = False  
+    
     class Config:
         orm_mode = True
 
