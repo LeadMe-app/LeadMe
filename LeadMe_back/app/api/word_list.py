@@ -50,16 +50,28 @@ def read_words(
 @router.get("/{word_id}", response_model=WordListResponse)
 def read_word(
         word_id: int,
+        user_id: Optional[str] = None,  # ← user_id 쿼리로 받음
         db: Session = Depends(get_db)
 ):
-    """특정 단어의 정보를 반환합니다."""
     db_word = db.query(models.WordList).filter(models.WordList.word_id == word_id).first()
     if db_word is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="해당 단어를 찾을 수 없습니다."
-        )
-    return db_word
+        raise HTTPException(status_code=404, detail="해당 단어를 찾을 수 없습니다.")
+
+    # 즐겨찾기 여부 확인
+    is_favorite = False
+    if user_id:
+        is_favorite = db.query(models.WordFavorites).filter(
+            models.WordFavorites.user_id == user_id,
+            models.WordFavorites.word_id == word_id
+        ).first() is not None
+
+    # 딕셔너리로 직접 응답
+    return {
+        "word_id": db_word.word_id,
+        "word": db_word.word,
+        "image_url": db_word.image_url,
+        "is_favorite": is_favorite
+    }
 
 
 '''랜덤 단어 제공 (즐겨찾기 여부 포함)'''
