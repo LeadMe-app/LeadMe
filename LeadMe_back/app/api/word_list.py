@@ -45,6 +45,28 @@ def read_words(
 
     return result
 
+'''랜덤 단어 제공 (즐겨찾기 여부 포함)'''
+@router.get("/random", response_model=WordListResponse)
+def get_random_word(user_id: str, db: Session = Depends(get_db)):
+    """무작위로 단어 하나를 반환하고, 즐겨찾기 상태도 함께 제공합니다."""
+    
+    random_word = db.query(models.WordList).order_by(func.random()).first()
+    if random_word is None:
+        raise HTTPException(status_code=404, detail="단어가 없습니다.")
+    
+    # 사용자의 즐겨찾기 여부 확인
+    is_favorite = db.query(models.WordFavorites).filter(
+        models.WordFavorites.user_id == user_id,
+        models.WordFavorites.word_id == random_word.word_id
+    ).first()
+
+    return WordListResponse(
+        word_id=random_word.word_id,
+        word=random_word.word,
+        image_url=random_word.image_url,
+        is_favorite=bool(is_favorite)
+    )
+
 
 '''특정 단어 반환'''
 @router.get("/{word_id}", response_model=WordListResponse)
@@ -73,28 +95,6 @@ def read_word(
         "is_favorite": is_favorite
     }
 
-
-'''랜덤 단어 제공 (즐겨찾기 여부 포함)'''
-@router.get("/random", response_model=WordListResponse)
-def get_random_word(user_id: str, db: Session = Depends(get_db)):
-    """무작위로 단어 하나를 반환하고, 즐겨찾기 상태도 함께 제공합니다."""
-    
-    random_word = db.query(models.WordList).order_by(func.random()).first()
-    if random_word is None:
-        raise HTTPException(status_code=404, detail="단어가 없습니다.")
-    
-    # 사용자의 즐겨찾기 여부 확인
-    is_favorite = db.query(models.WordFavorites).filter(
-        models.WordFavorites.user_id == user_id,
-        models.WordFavorites.word_id == random_word.word_id
-    ).first()
-
-    return WordListResponse(
-        word_id=random_word.word_id,
-        word=random_word.word,
-        image_url=random_word.image_url,
-        is_favorite=bool(is_favorite)
-    )
 
 '''
 @router.post("/upload/image/")
