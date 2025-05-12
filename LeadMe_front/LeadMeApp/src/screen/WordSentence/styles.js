@@ -10,11 +10,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
       },
   sentence: {
-    fontSize: 16,
+    fontSize: 18,
     color: COLORS.textSecondary,
     marginBottom: 10,
     textAlign: 'center',
-    paddingHorizontal: 20,
   },
   iconRow: {
     flexDirection: 'row',

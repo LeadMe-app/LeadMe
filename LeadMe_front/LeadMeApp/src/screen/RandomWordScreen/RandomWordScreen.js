@@ -33,7 +33,7 @@ const RandomWordScreen = ({ navigation }) => {
       }
 
       const response = await axiosInstance.get('/api/words/random', {
-        params: { user_id: 1 },
+        params: { user_id: userId },
       });
       console.log('✅ response.data:', response.data); // 이 줄 추가
 
@@ -47,13 +47,13 @@ const RandomWordScreen = ({ navigation }) => {
       }
 
       setWordData({
-        word: data.word,
         wordId: data.word_id,
+        word: data.word,
         image: { uri: data.image_url },
         isFavorite: data.is_favorite || false,
       });
     } catch (error) {
-      console.error('❌ 랜덤 단어 불러오기 실패:', error);
+      console.error('❌ 랜덤 단어 불러오기 실패:', error.response ? error.response.data : error);
       Alert.alert('오류', '랜덤 단어를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -77,17 +77,27 @@ const RandomWordScreen = ({ navigation }) => {
           user_id: userId,
           word_id: wordData.wordId,
         });
-
         if (response.status === 201) {
+          setWordData(prev => ({
+            ...prev,
+            favoriteId: response.data.favorite_id,
+          }));
           await refreshFavorites();
+          Alert.alert('즐겨찾기 추가', '단어가 즐겨찾기에 추가되었습니다.');
         }
       } else {
         const response = await axiosInstance.delete(`/api/words/favorites/`, {
-          params: { user_id: userId, word_id: wordData.wordId },
+          params: { user_id: userId, word_id: wordId },
         });
 
         if (response.status === 204) {
+          setWordData(prev => ({
+            ...prev,
+            isFavorite: false,
+            favoriteId: null,
+          }));
           await refreshFavorites();
+          Alert.alert('즐겨찾기 삭제', '단어가 즐겨찾기에서 삭제되었습니다.');
         }
       }
     } catch (error) {
@@ -115,7 +125,7 @@ const RandomWordScreen = ({ navigation }) => {
   };
 
   const handlePractice = () => {
-    Alert.alert('문장 연습', '문장 연습 화면으로 이동할 수 있습니다.');
+    navigation.navigate('WordSentence', { word : wordData.word});
   };
 
   useEffect(() => {
@@ -166,8 +176,8 @@ const RandomWordScreen = ({ navigation }) => {
           <Text style={styles.navButtonText}>홈</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.beforeButton} onPress={fetchRandomWord}>
-          <Text style={styles.navButtonText}>다음 단어</Text>
+        <TouchableOpacity style={styles.nextButton} onPress={fetchRandomWord}>
+          <Text style={styles.navButtonText}>다른 단어</Text>
         </TouchableOpacity>
       </View>
     </View>

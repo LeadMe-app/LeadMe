@@ -1,68 +1,72 @@
 import { StyleSheet } from 'react-native';
+import { COLORS } from '../../styles/colors';
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF3E0',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    justifyContent: 'flex-start',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
   image: {
     width: 200,
     height: 200,
-    marginVertical: 20,
+    marginVertical: 16,
     resizeMode: 'contain',
   },
-  wordRow: {
+  wordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
   },
   wordText: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
+    color: COLORS.textPrimary,
     marginRight: 8,
+    marginLeft: 15,
   },
-  star: {
-    fontSize: 26,
+  starIcon: {
+    marginTop: 7,
   },
   practiceButton: {
-    backgroundColor: '#ADD8E6',
+    backgroundColor: COLORS.blue,
     paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 15,
+    paddingHorizontal: 60,
+    borderRadius: 10,
     marginBottom: 30,
   },
-  practiceText: {
-    fontSize: 18,
-    color: '#000',
+  practiceButtonText: {
+    color: COLORS.textPrimary,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  bottomButtons: {
+  navContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     width: '100%',
+    position: 'absolute',
+    bottom: 30,
     paddingHorizontal: 20,
   },
-  homeButton: {
-    backgroundColor: 'green',
-    flex: 1,
-    padding: 15,
-    borderRadius: 15,
-    marginRight: 10,
+  navButton: {
+    padding: 12,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+    backgroundColor: COLORS.experienceButton,
   },
   nextButton: {
-    backgroundColor: 'tomato',
-    flex: 1,
-    padding: 15,
-    borderRadius: 15,
-    marginLeft: 10,
+    padding: 12,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+    backgroundColor: COLORS.redBox,
   },
-  bottomButtonText: {
-    textAlign: 'center',
-    color: '#fff',
-    fontSize: 16,
+  navButtonText: {
+    fontSize: 14,
+    color: COLORS.primaryText,
     fontWeight: 'bold',
   },
 });
