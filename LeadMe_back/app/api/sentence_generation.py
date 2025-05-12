@@ -50,7 +50,7 @@ class WordSentenceRequest(BaseModel):
 
 @router.post("/generate/word", tags=["sentence"])
 async def generate_sentence_with_word(data: WordSentenceRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == data.user_id).first()
+    user = db.query(User).filter(User.user_id == data.user_id).first()
     if not user:
         return {"error": "사용자를 찾을 수 없습니다."}
 
