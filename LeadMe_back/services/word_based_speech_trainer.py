@@ -1,5 +1,6 @@
 import logging
 import openai
+import re
 from openai import OpenAIError
 from openai.error import RateLimitError
 import os
@@ -48,7 +49,11 @@ async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
 
         content = response["choices"][0]["message"]["content"].strip()
         logger.info(f"GPT 응답 수신 완료: {content}")
-        return content
+        
+        # 첫 문장만 반환
+        first_sentence = re.split(r'[.!?]', content)[0].strip()
+        logger.info(f"최종 반환 문장: {first_sentence}")
+        return first_sentence
 
     except RateLimitError:
         logger.warning("RateLimitError: 호출이 너무 많습니다.")
