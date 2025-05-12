@@ -89,12 +89,12 @@ def get_random_word(user_id: str, db: Session = Depends(get_db)):
         models.WordFavorites.word_id == random_word.word_id
     ).first()
 
-    return {
-        "word_id": random_word.word_id,
-        "word": random_word.word,
-        "image_url": random_word.image_url,
-        "is_favorite": bool(is_favorite)  # 즐겨찾기 여부를 응답에 추가
-    }
+    return WordListResponse(
+        word_id=random_word.word_id,
+        word=random_word.word,
+        image_url=random_word.image_url,
+        is_favorite=bool(is_favorite)
+    )
 
 '''
 @router.post("/upload/image/")
