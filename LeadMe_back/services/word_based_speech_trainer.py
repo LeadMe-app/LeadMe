@@ -30,17 +30,20 @@ def generate_prompt(age_group: str) -> str:
     elif age_group == "13~19세":
         return (
             "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
+            "단 하나의 문장만 만들어 주세요."
             "너무 유치하지 않게, 자연스럽고 일상적인 상황에서 쓰는 표현으로 하고, "
             "학교생활, 친구 관계, 취미 같은 청소년 관심사와 어울리게 해줘."
         )
     elif age_group == "20세 이상":
         return (
             "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
+            "단 하나의 문장만 만들어 주세요."
             "자연스럽고 실생활에서 자주 쓰는 대화나 표현으로 하고, "
             "직장, 일상 대화, 뉴스, 사회 이슈 등 다양한 주제를 활용해도 좋아."
         )
     else:
         return (
+            "단 하나의 문장만 만들어 주세요."
             "발음 연습용으로 자연스럽고 명확한 한국어 문장을 하나 만들어줘. "
             "연령대에 관계없이 누구나 이해할 수 있도록."
         )
@@ -76,10 +79,16 @@ async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
         content = response["choices"][0]["message"]["content"].strip()
         logger.info(f"GPT 응답 수신 완료: {content}")
         
-        # 첫 문장만 반환
-        first_sentence = re.split(r'[.!?]', content)[0].strip()
-        logger.info(f"최종 반환 문장: {first_sentence}")
-        return first_sentence
+        # 문장 분리 후, 단어 포함된 문장 반환
+        sentences = re.split(r'(?<=[.!?])\s+', content)
+        for sentence in sentences:
+            if word in sentence:
+                logger.info(f"단어 포함 문장 반환: {sentence.strip()}")
+                return sentence.strip()
+
+        # fallback: 단어 포함 문장이 없으면 전체 content 반환
+        logger.warning("단어 포함 문장을 찾을 수 없어 전체 문장을 반환합니다.")
+        return content
 
     except RateLimitError:
         logger.warning("RateLimitError: 호출이 너무 많습니다.")
