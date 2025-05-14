@@ -24,20 +24,18 @@ def generate_prompt(age_group: str) -> str:
     if age_group == "5~12세":
         return (
             "5~12세 어린이가 문장 발음 연습하기 좋은 짧은 길이의 한국어 문장을 하나 만들어줘. "
-            "단어는 쉽고, 내용은 재미있고 상상력을 자극하는 표현으로 해줘. "
-            "예를 들어 동물, 놀이, 음식 같은 주제가 좋아."
+            "내용은 쉽고, 재미있게게 상상력을 자극하는 표현으로 해줘. "
         )
     elif age_group == "13~19세":
         return (
             "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
             "너무 유치하지 않게, 자연스럽고 일상적인 상황에서 쓰는 표현으로 하고, "
-            "학교생활, 친구 관계, 취미 같은 청소년 관심사와 어울리게 해줘."
         )
     elif age_group == "20세 이상":
         return (
             "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
             "자연스럽고 실생활에서 자주 쓰는 대화나 표현으로 하고, "
-            "직장, 일상 대화, 뉴스, 사회 이슈 등 다양한 주제를 활용해도 좋아."
+            "20세 이상의 연령대에 적절한 문체를 사용해서, 현실적인 주제를 포함한 문장으로 만들어줘."
         )
     else:
         return (
@@ -59,7 +57,10 @@ def generate_prompt(age_group: str) -> str:
 
 # GPT 문장 생성 함수 (단어 + 연령대 기반)
 async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
-    prompt = f'"{word}"라는 단어를 포함해서 {generate_prompt(age_group)}'
+    prompt = f'"{word}"라는 단어를 포함해서 {generate_prompt(age_group)} ' \
+         "문장은 반드시 하나만 만들고, 두 줄이 넘지 않도록 15단어 이내의 짧고 간결한 문장으로 해줘. " \
+         "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘."\
+         "문장의 어순이 맞도록, 자연스러운 문장이 되도록, 이질감 없는 문장으로 만들어줘"
     logger.info(f"프롬프트 생성: {prompt}")
 
     try:
@@ -76,10 +77,7 @@ async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
         content = response["choices"][0]["message"]["content"].strip()
         logger.info(f"GPT 응답 수신 완료: {content}")
         
-        # 첫 문장만 반환
-        first_sentence = re.split(r'[.!?]', content)[0].strip()
-        logger.info(f"최종 반환 문장: {first_sentence}")
-        return first_sentence
+        return content
 
     except RateLimitError:
         logger.warning("RateLimitError: 호출이 너무 많습니다.")
@@ -91,10 +89,11 @@ async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
         logger.exception("예기치 못한 오류 발생")
         raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
 
-'''# 예시 메인 실행 함수
+'''
+# 예시 메인 실행 함수
 async def main():
-    age_group = "5~12세"     # 연령대 예시
-    keyword = "엄마"           # 단어 예시
+    age_group = "20세 이상"     # 연령대 예시
+    keyword = "사과"           # 단어 예시
 
     sentence = await get_sentence_for_word_and_age(keyword, age_group)
     print(f"\n[연령대: {age_group} / 단어: '{keyword}']\n생성된 문장: {sentence}\n")
@@ -103,4 +102,4 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-'''
+    '''
