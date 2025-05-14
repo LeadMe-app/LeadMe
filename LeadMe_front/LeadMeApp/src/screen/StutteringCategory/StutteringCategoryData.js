@@ -12,7 +12,7 @@ const SelectWordModeScreen = ({ navigation }) => {
       <View style={styles.topRow}>
         <TouchableOpacity
           style={[styles.optionBox, { backgroundColor: '#FFD8A9' }]}
-          onPress={() => navigation.navigate('RandomWord')}
+          onPress={() => navigation.navigate('RandomWordScreen')}
         >
           <Text style={styles.optionTitle}>랜덤</Text>
         </TouchableOpacity>

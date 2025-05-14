@@ -25,7 +25,7 @@ const WordScreen = ({ navigation, route }) => {
   const fetchAllWords = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
-      const response = await axiosInstance.get('/api/words', {
+      const response = await axiosInstance.get('/api/words/', {
         params: { user_id: userId },
       });
       setAllWords(response.data); // 단어 목록 저장
@@ -132,7 +132,7 @@ const WordScreen = ({ navigation, route }) => {
   };
 
   const handlePractice = () => {
-    alert('문장 연습 시작!');
+    navigation.navigate('WordSentence', { word : wordData.word, wordId:wordId,});
   };
 
   const handleGoBack = async () => {
