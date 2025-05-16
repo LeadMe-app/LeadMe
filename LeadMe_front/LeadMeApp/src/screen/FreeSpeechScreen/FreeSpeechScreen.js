@@ -40,12 +40,12 @@ const FreeSpeechScreen = ({ navigation }) => {
       const fileName = filePath.split('/').pop();
       const formData = new FormData();
       formData.append('file', {
-        uri: filePath,
+        uri: uri,
         type: 'audio/mp4',
         name: fileName || 'recording.mp4',
       });
 
-      const response = await axiosInstance.post('/api/speech/analyze', formData, {
+      const response = await axiosInstance.post('/analyze-audio', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -54,7 +54,7 @@ const FreeSpeechScreen = ({ navigation }) => {
       console.log('서버 응답:', response.data);
 
       setSpeechSpeed(response.data.spm);
-      setFeedback(response.data.feedback);
+      setFeedback(`발화 속도 등급 ${response.data.speed_category}`);
 
     } catch (error) {
       console.error('서버 업로드 실패:', error);
