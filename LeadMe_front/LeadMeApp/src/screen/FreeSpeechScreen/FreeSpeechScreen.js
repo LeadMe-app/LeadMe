@@ -36,11 +36,13 @@ const FreeSpeechScreen = ({ navigation }) => {
 
   const sendRecordingToServer = async (filePath) => {
     try {
+      const uri = Platform.OS === 'android' ? `file://${filePath}` : filePath;
+      const fileName = filePath.split('/').pop();
       const formData = new FormData();
       formData.append('file', {
         uri: filePath,
-        type: 'audio/wav',
-        name: 'recording.wav',
+        type: 'audio/mp4',
+        name: fileName || 'recording.mp4',
       });
 
       const response = await axiosInstance.post('/api/speech/analyze', formData, {
