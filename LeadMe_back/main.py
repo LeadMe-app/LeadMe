@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-
+from app.api import tts
 import os
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -56,6 +56,7 @@ app.include_router(word_list.router, prefix="/api/words", tags=["words"])
 app.include_router(speed_analysis.router, prefix="/api/speed", tags=["speed"])
 app.include_router(speech_recognition.router, prefix="/api/voice", tags=["voice"])
 app.include_router(sentence_generation.router, prefix="/api/sentence", tags=["sentence"])
+app.include_router(tts.router, prefix="/api/tts", tags=["tts"])
 
 # 서버 시작 이벤트
 # 서버 시작 이벤트
