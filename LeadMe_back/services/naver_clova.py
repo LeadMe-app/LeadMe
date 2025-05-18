@@ -44,9 +44,15 @@ class NaverClovaService:
 
             if response.status_code == 200:
                 result = response.json()
+                text = result.get("text", "").strip()
+                if not text:
+                    return {
+                        "status": "error",
+                        "error_message": "인식된 텍스트가 없습니다."
+                    }
                 return {
                     "status": "success",
-                    "text": result.get("text", ""),
+                    "text": text,
                     "confidence": result.get("confidence", 0)
                 }
             else:
