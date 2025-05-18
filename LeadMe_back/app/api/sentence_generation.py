@@ -14,6 +14,7 @@ router = APIRouter()
 polly_service = AmazonPollyService()
 stuttering_tts_service = StutteringTTSService()  # ✅ 초기화
 sentences_cache: Dict[str, str] = {}
+stuttering_sentences_cache: Dict[str, str] = {}  # 말더듬증 전용 캐시
 
 ''' 속화증 문장 생성 코드 '''
 
@@ -46,6 +47,10 @@ async def generate_sentence_with_word(data: WordSentenceRequest, db: Session = D
         return {"error": "사용자를 찾을 수 없습니다."}
 
     sentence = await get_sentence_for_word_and_age(data.word, user.age_group)
+    
+    # 캐시에 저장
+    stuttering_sentences_cache[data.user_id] = sentence
+    
     return {
         "sentence": sentence,
         "word": data.word,
@@ -60,7 +65,9 @@ async def generate_word_sentence_tts(data: WordSentenceRequest, db: Session = De
         return {"error": "사용자를 찾을 수 없습니다."}
 
     # 1. 문장 생성
-    sentence = await get_sentence_for_word_and_age(data.word, user.age_group)
+    sentence = stuttering_sentences_cache.get(data.user_id)
+    if not sentence:
+        return {"error": "생성된 문장이 없습니다. 먼저 문장 생성 API를 호출하세요."}
 
     # 2. 말더듬증 전용 TTS 생성 (stuttering_tts_service 사용, 속도 고정)
     tts_result = stuttering_tts_service.text_to_speech(
