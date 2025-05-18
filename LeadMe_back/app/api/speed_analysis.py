@@ -40,7 +40,8 @@ def convert_m4a_to_wav(input_path: str, output_path: str):
         "-ac", "1",            # mono
         "-ar", "16000",        # 16kHz
         "-sample_fmt", "s16",  # 16-bit PCM
-        output_path
+        output_path,
+        "-y"
     ]
     subprocess.run(command, check=True)
 
