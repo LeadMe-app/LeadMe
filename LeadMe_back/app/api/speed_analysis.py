@@ -35,17 +35,27 @@ naver_clova = NaverClovaService()
 
 def convert_m4a_to_wav(input_path: str, output_path: str):
     command = [
-    "ffmpeg",
-    "-y",
-    "-i", input_path,
-    "-vn",               # 비디오 제거
-    "-acodec", "pcm_s16le",
-    "-ac", "1",
-    "-ar", "16000",
-    output_path
+        "ffmpeg",
+        "-i", input_path,
+        "-ac", "1",            # mono
+        "-ar", "16000",        # 16kHz
+        "-sample_fmt", "s16",  # 16-bit PCM
+        output_path,
+        "-y"
     ]
     subprocess.run(command, check=True)
 
+def inspect_audio_file(path: str):
+    command = ["ffmpeg", "-v", "error", "-i", path, "-f", "null", "-"]
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    if result.returncode == 0:
+        print("오디오 파일은 문제 없습니다.")
+    else:
+        print("오디오 파일에 문제가 있습니다.")
+        print(result.stderr.decode("utf-8", errors="ignore"))
+
+        
 @router.post("/analyze-audio-file/", status_code=status.HTTP_201_CREATED)
 async def analyze_audio_file(
         file: UploadFile = File(...),
@@ -94,6 +104,7 @@ async def analyze_audio_file(
             wav_temp_file.close()
 
             convert_m4a_to_wav(temp_file_path, wav_temp_path)
+            inspect_audio_file(wav_temp_path)  # 변환 후 유효성 검사
             used_audio_path = wav_temp_path
         else:
             used_audio_path = temp_file_path
