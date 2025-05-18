@@ -9,6 +9,7 @@ import librosa
 from pydub import AudioSegment
 from datetime import datetime, date
 import logging
+import subprocess
 
 # 내부 모듈 임포트
 from database import get_db
@@ -33,9 +34,15 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 naver_clova = NaverClovaService()
 
 def convert_m4a_to_wav(input_path: str, output_path: str):
-    audio = AudioSegment.from_file(input_path)
-    audio.export(output_path, format="wav")
-
+    command = [
+        "ffmpeg",
+        "-i", input_path,
+        "-ac", "1",            # mono
+        "-ar", "16000",        # 16kHz
+        "-sample_fmt", "s16",  # 16-bit PCM
+        output_path
+    ]
+    subprocess.run(command, check=True)
 
 @router.post("/analyze-audio-file/", status_code=status.HTTP_201_CREATED)
 async def analyze_audio_file(
