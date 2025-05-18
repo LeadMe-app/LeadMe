@@ -52,6 +52,8 @@ async def analyze_audio_file(
     Returns:
         분석 결과
     """
+    print("파일 이름:", file.filename)  # <- 추가
+    
     # 파일 확장자 검증
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
         raise HTTPException(
@@ -150,19 +152,21 @@ async def analyze_audio_file(
             analysis_result["stt_text"] = stt_result["text"]
             analysis_result["stt_confidence"] = stt_result.get("confidence", 0)
 
-        # 백그라운드 작업에 임시 파일 삭제 추가
+        # 1. timestamp로 영구 저장 파일명 구성
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        permanent_filename = f"speech_{user_id}_{timestamp}{os.path.splitext(file.filename)[1]}"
+        permanent_path = os.path.join(UPLOAD_DIR, permanent_filename)
+
+        # 2. 임시 파일 → 영구 파일로 복사
+        shutil.copy2(temp_file_path, permanent_path)
+
+        # 3. 백그라운드로 임시 파일 삭제 (이제 여기서!)
         if background_tasks:
             background_tasks.add_task(os.remove, temp_file_path)
         else:
             os.remove(temp_file_path)
 
-        # 영구 파일 저장 (선택 사항)
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        permanent_filename = f"speech_{user_id}_{timestamp}{os.path.splitext(file.filename)[1]}"
-        permanent_path = os.path.join(UPLOAD_DIR, permanent_filename)
-
-        # 임시 파일을 영구 파일로 복사
-        shutil.copy2(temp_file_path, permanent_path)
+        # 4. 결과 정보에 파일 경로 포함
         analysis_result["file_path"] = permanent_path
         analysis_result["file_url"] = f"/uploads/audio/{permanent_filename}"
 
