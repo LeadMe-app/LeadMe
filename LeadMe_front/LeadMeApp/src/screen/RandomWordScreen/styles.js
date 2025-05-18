@@ -1,9 +1,6 @@
 import { StyleSheet } from 'react-native';
-<<<<<<< HEAD
 import { COLORS } from '../../styles/colors';
-=======
-import {COLORS} from '../../styles';
->>>>>>> 025ae787 (브랜치 이동 커밋)
+
 
 export const styles = StyleSheet.create({
   container: {
