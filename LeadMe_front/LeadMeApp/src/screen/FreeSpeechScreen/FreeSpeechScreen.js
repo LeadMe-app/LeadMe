@@ -22,7 +22,7 @@ const FreeSpeechScreen = ({ navigation }) => {
   const handleRecordPress = async () => {
     setIsRecording(true);
     const result = await audioRecorderPlayer.startRecorder();
-    setRecordedFilePath(result);  // 기존 파일 경로 유지
+    setRecordedFilePath(result);
     console.log('녹음 시작:', result);
   };
 
@@ -30,7 +30,7 @@ const FreeSpeechScreen = ({ navigation }) => {
     const result = await audioRecorderPlayer.stopRecorder();
     setIsRecording(false);
     console.log('녹음 종료:', result);
-    setRecordedFilePath(result);  // 종료 후 경로 유지
+    setRecordedFilePath(result);
     await sendRecordingToServer(result);
   };
 
@@ -81,12 +81,25 @@ const FreeSpeechScreen = ({ navigation }) => {
 
   const handlePlayPress = async () => {
     if (recordedFilePath) {
-      const sound = new Sound(recordedFilePath, '', (error) => {
+      // Android에서 file:// 제거 (Sound 라이브러리가 인식 못함)
+      const path = Platform.OS === 'android'
+        ? recordedFilePath.replace('file://', '')
+        : recordedFilePath;
+
+      console.log('재생할 경로:', path);
+
+      const sound = new Sound(path, '', (error) => {
         if (error) {
-          console.error('재생 실패:', error);
+          console.error('재생 초기화 실패:', error);
           return;
         }
-        sound.play();
+        sound.play((success) => {
+          if (success) {
+            console.log('재생 완료');
+          } else {
+            console.log('재생 중 오류 발생');
+          }
+        });
       });
     }
   };
