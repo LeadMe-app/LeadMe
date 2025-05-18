@@ -53,7 +53,7 @@ async def analyze_audio_file(
         분석 결과
     """
     print("파일 이름:", file.filename)  # <- 추가
-    
+
     # 파일 확장자 검증
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
         raise HTTPException(
@@ -101,6 +101,8 @@ async def analyze_audio_file(
             # STT 실패 시 추정치 사용
             syllables_count = int(voiced_duration * 4.5)  # 한국어 평균 발화 속도로 추정
             logger.warning(f"STT 실패 - 추정 음절 수: {syllables_count}")
+            logger.debug(f"temp_file_path exists: {os.path.exists(temp_file_path)}, size: {os.path.getsize(temp_file_path)} bytes")
+            logger.debug(f"librosa duration: {duration:.2f}s, voiced duration: {voiced_duration:.2f}s")
 
         # SPM 계산
         spm = int(syllables_count / duration * 60)
