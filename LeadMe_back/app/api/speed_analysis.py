@@ -17,7 +17,8 @@ import models
 from schemas.speech import SpeedAnalysisCreate, SpeedAnalysisResponse
 from schemas.user import UserSettingsCreate, UserSettingsResponse
 from app.api.auth import get_current_user
-from services.naver_clova import NaverClovaService
+from services.openai_stt import OpenAISTTService
+#from services.naver_clova import NaverClovaService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -30,8 +31,8 @@ logger = logging.getLogger("speed_analysis")
 UPLOAD_DIR = "uploads/audio"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# 네이버 클로바 서비스 초기화
-naver_clova = NaverClovaService()
+# openai whisper 서비스 초기화
+OpenAI_Whisper = OpenAISTTService()
 
 def convert_m4a_to_wav(input_path: str, output_path: str):
     command = [
@@ -123,13 +124,13 @@ async def analyze_audio_file(
         voiced_duration = sum(f[1] - f[0] for f in frames) / sr
         voiced_percentage = voiced_duration / duration * 100
 
-        logger.info("네이버 클로바 STT 호출 시작")
-        stt_result = naver_clova.speech_to_text(used_audio_path)
+        logger.info("Whisper STT 호출 시작")
+        stt_result = OpenAI_Whisper.speech_to_text(used_audio_path)
         logger.info(f"STT 결과: {stt_result}")
 
         if stt_result["status"] == "success":
             text = stt_result["text"]
-            syllables_count = naver_clova.count_korean_syllables(text)
+            syllables_count = OpenAI_Whisper.count_korean_syllables(text)
             logger.info(f"STT 성공 - 텍스트: '{text}', 음절 수: {syllables_count}")
         else:
             syllables_count = int(voiced_duration * 4.5)
@@ -285,12 +286,12 @@ async def analyze_uploaded_audio(
         voiced_percentage = voiced_duration / duration * 100
 
         # 2. 네이버 클로바 STT로 텍스트 변환
-        stt_result = naver_clova.speech_to_text(temp_file_path)
+        stt_result = OpenAI_Whisper.speech_to_text(temp_file_path)
 
         # 음절 수 계산 (STT 성공 시 텍스트 기반, 실패 시 추정)
         if stt_result["status"] == "success":
             text = stt_result["text"]
-            syllables_count = naver_clova.count_korean_syllables(text)
+            syllables_count = OpenAI_Whisper.count_korean_syllables(text)
         else:
             # STT 실패 시 추정치 사용
             syllables_count = int(voiced_duration * 4.5)  # 한국어 평균 발화 속도로 추정
