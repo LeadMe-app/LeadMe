@@ -10,13 +10,7 @@ class OpenAISTTService:
     """OpenAI Whisper API를 사용하여 STT(Speech-to-Text) 기능을 제공하는 서비스 클래스"""
 
     def __init__(self):
-        """클래스 초기화"""
-        # OpenAI API 키 설정
         openai.api_key = os.getenv("OPENAI_API_KEY")
-
-        if not self.api_key:
-            logger.warning("OpenAI API 키가 설정되지 않았습니다. 환경 변수 OPENAI_API_KEY를 설정하세요.")
-
 
     def speech_to_text(self, file_path):
         """
