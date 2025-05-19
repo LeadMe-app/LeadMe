@@ -19,6 +19,7 @@ import WordScreen from './src/screen/WordScreen/WordScreen';
 import WordSentence from './src/screen/WordSentence/WordSentence';
 import {FavoriteProvider, FavoriteWordsScreen} from './src/screen/FavoriteWordsScreen/FavoriteWordsScreen';
 import RandomWordScreen from './src/screen/RandomWordScreen/RandomWordScreen';
+import SpeedListScreen from './src/screen/SpeedList/SpeedListScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -44,6 +45,7 @@ export default function App() {
         <Stack.Screen name="WordSentence" component={WordSentence} options={{headerShown: false}} />
         <Stack.Screen name="FavoriteWordsScreen" component={FavoriteWordsScreen} options={{headerShown: false}} />
         <Stack.Screen name="RandomWordScreen" component={RandomWordScreen} options={{headerShown: false}} />
+        <Stack.Screen name="SpeedListScreen" component={SpeedListScreen} options={{headerShown: false}} />        
       </Stack.Navigator>
     </NavigationContainer>
   </FavoriteProvider>
