@@ -10,13 +10,15 @@ import axiosInstance from '../../config/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
+const audioRecorderPlayer = new AudioRecorderPlayer();
+
 const WordSentence = ({ navigation, route }) => {
   const { word, wordId } = route.params;
   const [sentence, setSentence] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false); // 재생 여부 상태
   const [audioFile, setAudioFile] = useState(null); // 녹음된 파일 경로
-  const audioRecorderPlayer = new AudioRecorderPlayer();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchSentence = async () => {
   try {
@@ -47,20 +49,29 @@ const WordSentence = ({ navigation, route }) => {
     fetchSentence();
   }, [word]);
 
-  // 녹음 시작/중지
-  const [isProcessing, setIsProcessing] = useState(false);
-
 const handleRecordToggle = async () => {
-  if (isProcessing) return; // 중복 호출 방지
+  if (isProcessing) return;
   setIsProcessing(true);
 
   try {
-    if (isRecording) {
+    if (isRecording || audioRecorderPlayer._isRecording) {
       const result = await audioRecorderPlayer.stopRecorder();
+      await audioRecorderPlayer.removeRecordBackListener(); 
       setAudioFile(result);
       setIsRecording(false);
+
+      // 🎯 마이크 리소스 완전 해제를 위해 딜레이 삽입 (특히 Android)
+      await new Promise(resolve => setTimeout(resolve, 500));
+
     } else {
-      await audioRecorderPlayer.startRecorder();
+      // ✅ 녹음 시작 전 리소스 초기화
+      await audioRecorderPlayer.stopRecorder(); // 혹시 켜져 있을 경우
+      await audioRecorderPlayer.removeRecordBackListener();
+
+      // 🎯 새 녹음 시작
+      const result = await audioRecorderPlayer.startRecorder();
+      audioRecorderPlayer.addRecordBackListener(() => {});
+      setAudioFile(null);
       setIsRecording(true);
     }
   } catch (error) {
@@ -68,24 +79,38 @@ const handleRecordToggle = async () => {
     Alert.alert('녹음 오류', '녹음 중 문제가 발생했습니다.');
     setIsRecording(false);
   } finally {
-    setIsProcessing(false); // 항상 해제
-    }
-  };
+    setIsProcessing(false);
+  }
+};
 
   // 녹음된 파일 재생
   const handlePlayPress = async () => {
-    if (audioFile) {
-      if (isPlaying) {
-        // 재생 중이면 멈추기
-        await audioRecorderPlayer.stopPlayer();
-        setIsPlaying(false);
-      } else {
-        // 재생 시작
-        await audioRecorderPlayer.startPlayer(audioFile);
-        setIsPlaying(true);
-      }
-    } else {
+    if (!audioFile) {
       Alert.alert('오류', '녹음된 파일이 없습니다.');
+      return;
+    }
+
+    if (isPlaying) {
+      await audioRecorderPlayer.stopPlayer();
+      await audioRecorderPlayer.removePlayBackListener();
+      setIsPlaying(false);
+      return;
+    }
+
+    try {
+      await audioRecorderPlayer.startPlayer(audioFile);
+      setIsPlaying(true);
+
+      audioRecorderPlayer.addPlayBackListener((e) => {
+        if (e.current_position >= e.duration) {
+          audioRecorderPlayer.stopPlayer();
+          setIsPlaying(false);
+          audioRecorderPlayer.removePlayBackListener();
+        }
+      });
+    } catch (error) {
+      Alert.alert('재생 오류', '재생 중 문제가 발생했습니다.');
+      setIsPlaying(false);
     }
   };
 

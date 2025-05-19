@@ -23,7 +23,7 @@ const FreeSpeechScreen = ({ navigation }) => {
     setIsRecording(true);
     const result = await audioRecorderPlayer.startRecorder();
     setRecordedFilePath(result);
-    console.log('녹음 시작:', result);
+    console.log('녹음 시작:', result); // 눌렀을때 속도, 피드백 초기화
   };
 
   const handleStopPress = async () => {
