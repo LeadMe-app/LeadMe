@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: COLORS.white,
     marginBottom: 20,
-    maxHeight: 300,
+    maxHeight: '70%',
   },
   headerRow: {
     flexDirection: 'row',
