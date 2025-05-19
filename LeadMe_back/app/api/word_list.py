@@ -196,7 +196,7 @@ def read_favorites(
     if user_id:
         query = query.filter(models.WordFavorites.user_id == user_id)
 
-    favorites = query.offset(skip).limit(limit).all()
+    favorites = query.offset(skip).limit(limit)
     return favorites
 
 
