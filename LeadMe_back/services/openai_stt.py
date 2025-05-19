@@ -1,4 +1,4 @@
-from openai import OpenAI
+import openai
 import os
 import logging
 
@@ -12,13 +12,11 @@ class OpenAISTTService:
     def __init__(self):
         """클래스 초기화"""
         # OpenAI API 키 설정
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        openai.api_key = os.getenv("OPENAI_API_KEY")
 
         if not self.api_key:
             logger.warning("OpenAI API 키가 설정되지 않았습니다. 환경 변수 OPENAI_API_KEY를 설정하세요.")
 
-        # OpenAI 클라이언트 초기화
-        self.client = OpenAI(api_key=self.api_key)
 
     def speech_to_text(self, file_path):
         """
