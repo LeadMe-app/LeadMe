@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, NativeModules } from 'react-native';
 import styles from './styles';
 import Logo from '../../components/Logo';
-import Sound from '../../icons/sound_icons.svg';
+import Speaker from '../../icons/Speaker_icons.svg';
 import Micro from '../../icons/microphone_icons.svg';
 import Stop from '../../icons/stop_icons.svg';
 import axiosInstance from '../../config/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Sound from 'react-native-sound';
 
 const { DAFModule } = NativeModules;
 
@@ -65,6 +66,60 @@ const WordSentence = ({ navigation, route }) => {
     }
   };
 
+  const TextToSpeech = async () => {
+  if (!sentence) {
+    Alert.alert('오류', '먼저 문장을 생성해주세요.');
+    return;
+  }
+
+  try {
+    setIsProcessing(true);
+
+    const userId = await AsyncStorage.getItem('userId');
+    const token = await AsyncStorage.getItem('access_token');
+
+    const response = await axiosInstance.post(
+      '/api/sentence/generate/word/tts',
+      {
+        user_id: userId,
+        word,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );console.log('TTS 응답 데이터:', response.data);
+
+
+    const { tts_url  } = response.data;
+    const fullUrl = `${axiosInstance.defaults.baseURL}${tts_url }`;
+    if (!tts_url ) {
+      
+      Alert.alert('오류', '음성 파일 경로를 받아오지 못했습니다.');
+      return;
+    }
+
+    const sound = new Sound(fullUrl, '', (error) => {
+      if (error) {
+        console.error('음성 파일 로딩 실패:', error);
+        Alert.alert('오류', '음성 파일을 재생할 수 없습니다.');
+        return;
+      }
+      sound.play((success) => {
+        if (!success) {
+          console.error('재생 실패');
+        }
+        sound.release();
+      });
+    });
+
+  } catch (error) {
+    console.error('TTS 오류:', error);
+    Alert.alert('오류', '음성을 재생하는 중 문제가 발생했습니다.');
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
   return (
     <View style={styles.container}>
       <Logo />
@@ -74,8 +129,8 @@ const WordSentence = ({ navigation, route }) => {
 
       <View style={styles.underline} />
 
-      <TouchableOpacity>
-        <Sound width={40} height={40} marginTop={30} />
+      <TouchableOpacity onPress={TextToSpeech}>
+        <Speaker width={40} height={40} marginTop={30} />
       </TouchableOpacity>
 
       <View style={styles.iconRow}>

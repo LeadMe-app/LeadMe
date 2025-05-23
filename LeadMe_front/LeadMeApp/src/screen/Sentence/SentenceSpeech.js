@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import styles from './styles';
 import Logo from '../../components/Logo';
-import Sound from '../../icons/sound_icons.svg';
+import Speaker from '../../icons/Speaker_icons.svg';
 import Micro from '../../icons/microphone_icons.svg';
 import Stop from '../../icons/stop_icons.svg';
 import Play from '../../icons/play_icons.svg';
@@ -36,7 +36,7 @@ const SentenceSpeech = ({navigation}) => {
 
       <View style={styles.topRow}>
         <TouchableOpacity>
-          <Sound width={40} height={40} />
+          <Speaker width={40} height={40} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.dropdown}>
           <Text style={styles.dropdownText}>원하는 속도를 선택하세요</Text>
