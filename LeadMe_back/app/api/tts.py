@@ -60,7 +60,7 @@ async def generate_sentence(
             detail=f"문장 생성 중 오류가 발생했습니다: {str(e)}"
         )
 
-# 속화증 tts 엔드포인트 ? 
+# 속화증 tts 엔드포인트
 @router.post("/text-to-speech/")
 async def text_to_speech(
         text: Optional[str] = Query(None, description="변환할 텍스트 (직접 제공 시)"),
