@@ -143,7 +143,7 @@ const WordScreen = ({ navigation, route }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const username = res.data.username;
-        navigation.navigate('HomeScreen', { username });
+        navigation.navigate('HomeScreen');
       } else {
         console.warn('토큰이 없습니다.');
       }

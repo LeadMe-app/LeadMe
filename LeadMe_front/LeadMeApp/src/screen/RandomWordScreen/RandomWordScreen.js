@@ -114,7 +114,7 @@ const RandomWordScreen = ({ navigation }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const username = res.data.username;
-        navigation.replace('HomeScreen', { username });
+        navigation.replace('HomeScreen');
       } else {
         Alert.alert('로그인 필요', '다시 로그인해주세요.');
       }

@@ -87,8 +87,7 @@ const WordSentence = ({ navigation, route }) => {
       {
         headers: { Authorization: `Bearer ${token}` },
       }
-    );console.log('TTS 응답 데이터:', response.data);
-
+    );
 
     const { tts_url  } = response.data;
     const fullUrl = `${axiosInstance.defaults.baseURL}${tts_url }`;

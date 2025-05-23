@@ -1,11 +1,20 @@
-import React from 'react';
-import { View, Text, TouchableOpacity,  } from 'react-native';
+import React, {useState, useEffect}from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { styles } from './styles';
 import Logo from '../../components/Logo';
 import Icon from '../../icons/home_icons.svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const HomeScreen = ({ route, navigation }) => {
-    const { username } = route.params;
+const HomeScreen = ({ navigation }) => {
+     const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    const loadUserName = async () => {
+      const storedUsername = await AsyncStorage.getItem('username');
+      if (storedUsername) setUsername(storedUsername);
+    };
+    loadUserName();
+  }, []);
     return (
     <View style={styles.container}>
       <Logo/>
@@ -14,7 +23,7 @@ const HomeScreen = ({ route, navigation }) => {
         <Icon width={80} height={80} marginRight={15}/>
         <View>
         <Text style={styles.greeting}>
-         <Text  ext style={styles.nickname}>{username}</Text> 님 반갑습니다.
+         <Text style={styles.nickname}>{username}</Text> 님 반갑습니다.
       </Text>
       <Text style={styles.link} onPress={() => navigation.navigate('ProfileScreen')}>
         학습 내용 확인하기
