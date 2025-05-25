@@ -21,10 +21,6 @@ from services.openai_stt import OpenAISTTService
 #from services.naver_clova import NaverClovaService
 
 
-print(f"🔍 DEBUG: 파일명={file.filename}")
-print(f"🔍 DEBUG: 사용자={current_user.user_id if current_user else 'None'}")
-print(f"🔍 DEBUG: 파일 크기={file.size if hasattr(file, 'size') else 'unknown'}")
-
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -63,12 +59,15 @@ def inspect_audio_file(path: str):
 
 
 @router.post("/analyze-audio-file/", status_code=status.HTTP_201_CREATED)
-async def analyze_audio_file(
-        file: UploadFile = File(...),
+async def analyze_audio_file(    
+    file: UploadFile = File(...),
         background_tasks: BackgroundTasks = None,
         db: Session = Depends(get_db),
         current_user: models.User = Depends(get_current_user)  # 현재 로그인한 사용자 가져오기
 ):
+    print(f"🔍 DEBUG: 파일명={file.filename}")
+    print(f"🔍 DEBUG: 사용자={current_user.user_id if current_user else 'None'}")
+    print(f"🔍 DEBUG: 파일 크기={file.size if hasattr(file, 'size') else 'unknown'}")
     """
     음성 파일을 분석하여 발화 속도를 측정하고 결과를 DB에 저장합니다.
     현재 로그인한 사용자의 ID가 자동으로 사용됩니다.
