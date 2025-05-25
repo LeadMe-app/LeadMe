@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
     width: '100%',         // 줄 길이 (원하면 퍼센트로 조절 가능)
     alignSelf: 'center',  // 가운데 정렬
   },
+  
 });
 
 export default styles;
