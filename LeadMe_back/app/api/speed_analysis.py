@@ -20,6 +20,11 @@ from app.api.auth import get_current_user
 from services.openai_stt import OpenAISTTService
 #from services.naver_clova import NaverClovaService
 
+
+print(f"🔍 DEBUG: 파일명={file.filename}")
+print(f"🔍 DEBUG: 사용자={current_user.user_id if current_user else 'None'}")
+print(f"🔍 DEBUG: 파일 크기={file.size if hasattr(file, 'size') else 'unknown'}")
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
