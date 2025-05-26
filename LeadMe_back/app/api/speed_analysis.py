@@ -62,26 +62,13 @@ async def analyze_audio_file(
         file: UploadFile = File(...),
         background_tasks: BackgroundTasks = None,
         db: Session = Depends(get_db),
-        current_user: models.User = Depends(get_current_user)  # 현재 로그인한 사용자 가져오기
+        current_user: models.User = Depends(get_current_user)
 ):
-    """
-    음성 파일을 분석하여 발화 속도를 측정하고 결과를 DB에 저장합니다.
-    현재 로그인한 사용자의 ID가 자동으로 사용됩니다.
-    네이버 클로바 STT를 활용하여 더 정확한 음절 수를 계산합니다.
-
-    Args:
-        file: 분석할 음성 파일
-        background_tasks: 백그라운드 작업
-        db: 데이터베이스 세션
-        current_user: 현재 로그인한 사용자
-
-    Returns:
-        분석 결과
-    """
-    print("파일 이름:", file.filename)  # <- 추가
+    logger.info(f"[START] analyze_audio_file called - filename: {file.filename}, user_id: {current_user.user_id}")
 
     # 파일 확장자 검증
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
+        logger.warning(f"지원되지 않는 파일 형식: {file.filename}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="지원되지 않는 파일 형식입니다. .wav, .mp3, .m4a, .ogg 형식만 허용됩니다."
@@ -90,41 +77,51 @@ async def analyze_audio_file(
     try:
         original_ext = os.path.splitext(file.filename)[1].lower()
         is_convert_needed = original_ext != ".wav"
+        logger.info(f"파일 확장자: {original_ext}, 변환 필요: {is_convert_needed}")
 
         # 1. 원본 임시 파일 저장
         with tempfile.NamedTemporaryFile(delete=False, suffix=original_ext) as temp_file:
             temp_file_path = temp_file.name
             shutil.copyfileobj(file.file, temp_file)
-
         logger.info(f"임시 파일 저장 완료: {temp_file_path}")
 
-        # 2. 변환 필요하면 wav로 변환
+        # 2. wav 변환 필요하면 변환
         if is_convert_needed:
             wav_temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
             wav_temp_path = wav_temp_file.name
             wav_temp_file.close()
 
+            logger.info(f"wav 변환 시작: {temp_file_path} -> {wav_temp_path}")
             convert_m4a_to_wav(temp_file_path, wav_temp_path)
-            inspect_audio_file(wav_temp_path)  # 변환 후 유효성 검사
+            logger.info("wav 변환 완료")
+            inspect_audio_file(wav_temp_path)
             used_audio_path = wav_temp_path
         else:
             used_audio_path = temp_file_path
+            logger.info("wav 변환 불필요, 원본 사용")
 
+        # 사용자 및 기준값 가져오기
         user_id = current_user.user_id
+        logger.info(f"사용자 ID: {user_id}, 연령대: {current_user.age_group}")
 
         db_age_group_speed = db.query(models.AgeGroupSpeechRate).filter(
             models.AgeGroupSpeechRate.age_group == current_user.age_group
         ).first()
+        logger.info(f"연령대 속도 기준 조회 완료: {db_age_group_speed}")
 
-        # 오디오 분석
+        # 음성 로드 및 분석
+        logger.info(f"librosa 음성 로드 시작: {used_audio_path}")
         y, sr = librosa.load(used_audio_path, sr=None)
         duration = librosa.get_duration(y=y, sr=sr)
+        logger.info(f"음성 로드 완료 - duration: {duration:.2f}초, sr: {sr}")
 
         frames = librosa.effects.split(y, top_db=20)
         voiced_duration = sum(f[1] - f[0] for f in frames) / sr
         voiced_percentage = voiced_duration / duration * 100
+        logger.info(f"음성 프레임 분석 완료 - voiced_duration: {voiced_duration:.2f}초, voiced_percentage: {voiced_percentage:.1f}%")
 
-        logger.info("Whisper STT 호출 시작")
+        # STT 호출
+        logger.info("OpenAI Whisper STT 호출 시작")
         stt_result = OpenAI_Whisper.speech_to_text(used_audio_path)
         logger.info(f"STT 결과: {stt_result}")
 
@@ -137,8 +134,9 @@ async def analyze_audio_file(
             logger.warning(f"STT 실패 - 추정 음절 수: {syllables_count}")
 
         spm = int(syllables_count / duration * 60)
-        logger.info(f"분석 결과: 음절 수={syllables_count}, 녹음 길이={duration:.2f}초, SPM={spm}")
+        logger.info(f"SPM 계산 완료: {spm}")
 
+        # 속도 카테고리 판단
         speed_category = "정상"
         if db_age_group_speed:
             if spm <= db_age_group_speed.slow_rate:
@@ -150,19 +148,21 @@ async def analyze_audio_file(
                 speed_category = "느림"
             elif spm > 300:
                 speed_category = "빠름"
+        logger.info(f"속도 카테고리 결정: {speed_category}")
 
+        # DB 저장
         db_analysis = models.SpeedAnalysis(
             user_id=user_id,
             spm=spm,
             speed_category=speed_category,
             analysis_date=datetime.utcnow().date()
         )
-
         db.add(db_analysis)
         db.commit()
         db.refresh(db_analysis)
-        logger.info(f"분석 결과 DB 저장 완료 (ID: {db_analysis.analysis_id})")
+        logger.info(f"DB 저장 완료 (analysis_id: {db_analysis.analysis_id})")
 
+        # 결과 반환 데이터 준비
         analysis_result = {
             "status": "success",
             "duration": round(duration, 2),
@@ -179,33 +179,40 @@ async def analyze_audio_file(
             analysis_result["stt_text"] = stt_result["text"]
             analysis_result["stt_confidence"] = stt_result.get("confidence", 0)
 
+        # 업로드 파일 영구 저장
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         permanent_filename = f"speech_{user_id}_{timestamp}{original_ext}"
         permanent_path = os.path.join(UPLOAD_DIR, permanent_filename)
 
         shutil.copy2(temp_file_path, permanent_path)
+        logger.info(f"영구 저장 완료: {permanent_path}")
 
+        # 임시파일 삭제 예약
         if background_tasks:
             background_tasks.add_task(os.remove, temp_file_path)
             if is_convert_needed:
                 background_tasks.add_task(os.remove, wav_temp_path)
+            logger.info("임시 파일 삭제 작업 백그라운드 예약 완료")
         else:
             os.remove(temp_file_path)
             if is_convert_needed:
                 os.remove(wav_temp_path)
+            logger.info("임시 파일 즉시 삭제 완료")
 
         analysis_result["file_path"] = permanent_path
         analysis_result["file_url"] = f"/uploads/audio/{permanent_filename}"
 
+        logger.info("[END] analyze_audio_file 성공적으로 종료")
         return analysis_result
 
     except Exception as e:
+        logger.error(f"[ERROR] 음성 분석 중 예외 발생: {str(e)}", exc_info=True)
+        # 임시파일 존재하면 삭제
         if 'temp_file_path' in locals() and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         if 'wav_temp_path' in locals() and os.path.exists(wav_temp_path):
             os.remove(wav_temp_path)
 
-        logger.error(f"음성 분석 중 오류가 발생했습니다: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"음성 분석 중 오류가 발생했습니다: {str(e)}"
