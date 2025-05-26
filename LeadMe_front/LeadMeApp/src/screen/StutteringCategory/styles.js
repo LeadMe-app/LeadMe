@@ -43,4 +43,19 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.textPrimary,
   },
+  navButton: {
+    padding: 12,
+    borderRadius: 8,
+    width:'100%',
+    alignItems: 'center',
+    backgroundColor: COLORS.experienceButton,
+    position: 'absolute',
+    bottom: 30,
+  },
+
+  navButtonText: {
+    fontSize: 14,
+    color: COLORS.primaryText,
+    fontWeight: 'bold',
+  },
 });

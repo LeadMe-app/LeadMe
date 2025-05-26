@@ -31,9 +31,11 @@ const SelectWordModeScreen = ({ navigation }) => {
       >
         <Text style={styles.fullWidthText}>즐겨찾기 단어</Text>
       </TouchableOpacity>
-
-      <BackButton />
+      <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('HomeScreen')}>
+          <Text style={styles.navButtonText}>뒤로 가기</Text>
+      </TouchableOpacity>
     </View>
+    
   );
 };
 
