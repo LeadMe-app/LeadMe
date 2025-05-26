@@ -44,18 +44,15 @@ def generate_prompt(age_group: str) -> str:
 
 # 문장부호 제거 함수
 def remove_punctuation(text: str) -> str:
-    # 한글, 영문, 숫자, 공백만 남기고 모두 제거
     cleaned = re.sub(r"[^\w\s가-힣]", "", text)
-    # 연속된 공백은 한 칸으로 정리
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned
 
 # GPT 문장 생성 함수
 async def get_sentence_for_age_group(age_group: str) -> str:
-    prompt = f'"{generate_prompt(age_group)} 를 바탕으로 랜덤 문장 생성할거야 ' \
+    prompt = f'{generate_prompt(age_group)} ' \
              "문장은 반드시 하나만 만들고, 두 줄이 넘지 않도록 15단어 이내의 짧고 간결한 문장으로 해줘. " \
              "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘. " \
-             "문장에는 따옴표, 쉼표, 마침표, 느낌표, 물음표 등 모든 문장 부호를 제외하고 오직 글자와 공백만 포함해서 만들어줘. " \
              "문장의 어순이 맞도록, 자연스러운 문장이 되도록, 이질감 없는 문장으로 만들어줘."
     logger.info(f"프롬프트 생성: {prompt}")
 
@@ -88,6 +85,7 @@ async def get_sentence_for_age_group(age_group: str) -> str:
     except Exception as e:
         logger.exception("예기치 못한 오류 발생")
         raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
+
 
 '''
 # 예시 메인 실행 함수
