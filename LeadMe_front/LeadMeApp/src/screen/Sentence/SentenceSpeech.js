@@ -35,6 +35,8 @@ const SentenceSpeech = ({ navigation }) => {
 
   const [isTTSPlaying, setIsTTSPlaying] = useState(false);
   const ttsSoundRef = useRef(null);
+  const karaokeIndexRef = useRef(0);
+
    useEffect(() => {
     audioRecorderPlayer.current = new AudioRecorderPlayer();
 
@@ -45,61 +47,69 @@ const SentenceSpeech = ({ navigation }) => {
   const getDelayFromSPS = (sps) => Math.round((1000 / sps) * 0.9);
   // 속도 매핑 (밀리초 단위)
   const speedMap = {
-    '5~12세': {
-      느림: getDelayFromSPS(2.5),  // ~360ms
-      중간: getDelayFromSPS(3.5),  // ~257ms
-      빠름: getDelayFromSPS(4.5),  // ~200ms
-    },
-    '13~19세': {
-      느림: getDelayFromSPS(3.5),  // ~257ms
-      중간: getDelayFromSPS(4.5),  // ~200ms
-      빠름: getDelayFromSPS(5.5),  // ~164ms
-    },
-    '20세 이상': {
-      느림: getDelayFromSPS(4.5),  // ~200ms
-      중간: getDelayFromSPS(5.5),  // ~164ms
-      빠름: getDelayFromSPS(6.5),  // ~138ms
-    },
-  };
+  '5~12세': {
+    느림: getDelayFromSPS(2.5),      // 느림 훈련용
+    평균: getDelayFromSPS(3.5),      // 평균: 일반 아동 속도
+    조금빠름: getDelayFromSPS(4.0),  // 평균을 향한 훈련
+    빠름: getDelayFromSPS(5.0),      // 속화증 말하기 수준
+  },
+  '13~19세': {
+    느림: getDelayFromSPS(3.0),
+    평균: getDelayFromSPS(4.5),
+    조금빠름: getDelayFromSPS(5.0),
+    빠름: getDelayFromSPS(6.0),
+  },
+  '20세 이상': {
+    느림: getDelayFromSPS(3.5),
+    평균: getDelayFromSPS(5.0),
+    조금빠름: getDelayFromSPS(5.5),
+    빠름: getDelayFromSPS(6.5),
+  },
+};
 
   // 문장을 음절 단위로 쪼갬
   const syllables = Array.from(sentence);
+  const karaokeActiveRef = useRef(0);
 
   // 노래방 애니메이션 시작
   const startKaraokeAnimation = () => {
+    karaokeActiveRef.current = true;
     if (intervalRef.current) clearInterval(intervalRef.current);
     setHighlightIndex(0);
     setIsAnimating(true);
 
-    const delay =
-      (speedMap[ageGroup] && speedMap[ageGroup][selectedSpeed]) || 300;
-
-    let index = 0;
+    const delay = (speedMap[ageGroup] && speedMap[ageGroup][selectedSpeed]) || 300;
+    karaokeIndexRef.current = 0;
 
     const animate = () => {
-    intervalRef.current = setInterval(() => {
-      setHighlightIndex((prev) => {
-        if (index + 1 >= syllables.length) {
-          clearInterval(intervalRef.current); // 현재 사이클 종료
-          setTimeout(() => {
-            index = 0;
-            setHighlightIndex(0);
-            animate(); // 다시 시작
-          }, 1000); // 💡 1.5초 쉬기
-          return prev; // 인덱스 증가 X
-        } else {
-          index++;
-          return prev + 1;
+      if (!karaokeActiveRef.current) return; 
+      intervalRef.current = setInterval(() => {
+        if (!karaokeActiveRef.current) {
+          clearInterval(intervalRef.current);
+          return;
         }
-      });
-    }, delay);
-  };
 
-  animate(); // 애니메이션 시작
-};
+        if (karaokeIndexRef.current >= syllables.length) {
+          clearInterval(intervalRef.current);
+          setTimeout(() => {
+            if (karaokeActiveRef.current) {
+              karaokeIndexRef.current = 0;
+              setHighlightIndex(0);
+              animate(); // 반복
+            }
+          }, 1000);
+        } else {
+          setHighlightIndex(karaokeIndexRef.current);
+          karaokeIndexRef.current += 1;
+        }
+      }, delay);
+    };
+    animate();
+  };
 
   // 노래방 애니메이션 종료
   const stopKaraokeAnimation = () => {
+    karaokeActiveRef.current = false;
     if (intervalRef.current) clearInterval(intervalRef.current);
     setHighlightIndex(-1);
     setIsAnimating(false);
@@ -307,7 +317,8 @@ const SentenceSpeech = ({ navigation }) => {
         >
           <Picker.Item label="원하는 속도를 선택하세요" value=" " enabled={false}/>
           <Picker.Item label="느림" value="느림" />
-          <Picker.Item label="중간" value="중간" />
+          <Picker.Item label="평균" value="평균" />
+          <Picker.Item label="조금빠름" value="조금빠름" />
           <Picker.Item label="빠름" value="빠름" />
         </Picker>
       </View>
