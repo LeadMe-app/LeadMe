@@ -30,13 +30,13 @@ def generate_prompt(age_group: str) -> str:
         return (
             "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
             "너무 유치하지 않게, 자연스럽고 일상적인 상황에서 쓰는 표현으로 해줘. "
-            "현실적인 주제를 포함해서, 한 문장이지만, 약 15~20단어어 길이로 만들어줘."
+            "현실적인 주제를 포함해서, 약 15~20단어어 길이로 만들어줘."
         )
     elif age_group == "20세 이상":
         return (
             "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
             "자연스럽고 실생활에서 자주 쓰는 대화나 표현으로 하고, "
-            "현실적인 주제를 포함해서, 한 문장이지만 약 20~25단어 길이로 만들어줘."
+            "현실적인 주제를 포함해서, 약 20~25단어 길이로 만들어줘."
         )
     else:
         return (
@@ -93,7 +93,7 @@ async def get_sentence_for_age_group(age_group: str) -> str:
         raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
 
 
-
+'''
 # 예시 메인 실행 함수
 async def main():
     for age in ["5~12세", "13~19세", "20세 이상"]:
@@ -102,3 +102,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    '''
