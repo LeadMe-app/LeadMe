@@ -21,9 +21,9 @@ class AmazonPollyService:
         # Amazon Polly 클라이언트 생성
         self.polly_client = boto3.client(
             'polly',
-            region_name=os.getenv("AWS_REGION", "ap-northeast-2"),
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "AKIA4HR3PYZCTIYVQR6W"),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "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")
+            region_name=os.getenv("AWS_REGION"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
         )
 
         # 연령대별 속도 맵 정의
