@@ -105,27 +105,8 @@ const RandomWordScreen = ({ navigation }) => {
       Alert.alert('오류', '즐겨찾기 설정에 실패했습니다.');
     }
   };
-
-  const handleGoHome = async () => {
-    try {
-      const token = await AsyncStorage.getItem('access_token');
-      if (token) {
-        const res = await axiosInstance.get('/api/users/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const username = res.data.username;
-        navigation.replace('HomeScreen');
-      } else {
-        Alert.alert('로그인 필요', '다시 로그인해주세요.');
-      }
-    } catch (error) {
-      console.error('❌ 사용자 정보 불러오기 실패:', error);
-      Alert.alert('오류', '사용자 정보를 불러올 수 없습니다.');
-    }
-  };
-
   const handlePractice = () => {
-    navigation.navigate('WordSentence', { word : wordData.word});
+    navigation.navigate('WordSentence', { word:wordData.word, wordId:wordData.wordId});
   };
 
   useEffect(() => {
@@ -172,8 +153,8 @@ const RandomWordScreen = ({ navigation }) => {
 
       {/* 하단 버튼 */}
       <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.navButton} onPress={handleGoHome}>
-          <Text style={styles.navButtonText}>홈</Text>
+        <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('StutteringCategoryData')}>
+          <Text style={styles.navButtonText}>뒤로 가기</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.nextButton} onPress={fetchRandomWord}>

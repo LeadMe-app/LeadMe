@@ -190,16 +190,19 @@ const EditProfileScreen = ({ navigation }) => {
       />
       {phoneError ? <Text style={styles.error}>{phoneError}</Text> : null}
 
-      <Picker
-        selectedValue={ageGroup}
-        onValueChange={validateAgeGroup}
-        style={styles.picker}
-      >
-        <Picker.Item label="연령대를 선택하세요." value="" enabled={false} />
-        <Picker.Item label="어린이: 5 ~ 12세" value="5~12세" />
-        <Picker.Item label="청소년: 13세 ~ 19세" value="13~19세" />
-        <Picker.Item label="성인: 20세 이상" value="20세 이상" />
-      </Picker>
+      <View style={styles.pickerWrapper}>
+        <Picker
+          selectedValue={ageGroup}
+          onValueChange={validateAgeGroup}
+          style={styles.picker}
+        >
+          <Picker.Item label="연령대를 선택하세요." value="" enabled={false} />
+          <Picker.Item label="어린이: 5 ~ 12세" value="5~12세" />
+          <Picker.Item label="청소년: 13세 ~ 19세" value="13~19세" />
+          <Picker.Item label="성인: 20세 이상" value="20세 이상" />
+        </Picker>
+      </View>
+
       {ageGroupError ? <Text style={styles.error}>{ageGroupError}</Text> : null}
 
       <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>

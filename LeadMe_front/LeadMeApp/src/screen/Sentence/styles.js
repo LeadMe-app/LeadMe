@@ -10,18 +10,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
       },
   sentence: {
-    fontSize: 16,
+    fontSize: 18,
     color: COLORS.textSecondary,
     marginBottom: 10,
     textAlign: 'center',
-    paddingHorizontal: 20,
   },
   sentenceActive: {
     color: COLORS.errorText,
   },
   dropdown: {
     width: '70%',
-    height: 40,
+    height: 50,
     backgroundColor: COLORS.inputBackground,
     justifyContent: 'center',
     alignItems: 'center',

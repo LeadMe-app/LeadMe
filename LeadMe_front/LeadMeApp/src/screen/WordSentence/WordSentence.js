@@ -14,8 +14,10 @@ const { DAFModule } = NativeModules;
 const WordSentence = ({ navigation, route }) => {
   const { word, wordId } = route.params;
   const [sentence, setSentence] = useState('');
+  const [isTtsPlaying, setIsTtsPlaying] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDAFRunning, setIsDAFRunning] = useState(false);
+  const [ttsSound, setTtsSound] = useState(null);
 
   const fetchSentence = async () => {
     try {
@@ -67,57 +69,74 @@ const WordSentence = ({ navigation, route }) => {
   };
 
   const TextToSpeech = async () => {
-  if (!sentence) {
-    Alert.alert('오류', '먼저 문장을 생성해주세요.');
-    return;
-  }
-
-  try {
-    setIsProcessing(true);
-
-    const userId = await AsyncStorage.getItem('userId');
-    const token = await AsyncStorage.getItem('access_token');
-
-    const response = await axiosInstance.post(
-      '/api/sentence/generate/word/tts',
-      {
-        user_id: userId,
-        word,
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
+    if (isTtsPlaying) {
+      // TTS가 재생 중이면 중단
+      if (ttsSound) {
+        ttsSound.stop(() => {
+          ttsSound.release();
+          setTtsSound(null);
+          setIsTtsPlaying(false);
+        });
       }
-    );
-
-    const { tts_url  } = response.data;
-    const fullUrl = `${axiosInstance.defaults.baseURL}${tts_url }`;
-    if (!tts_url ) {
-      
-      Alert.alert('오류', '음성 파일 경로를 받아오지 못했습니다.');
+      return;
+    }
+    if (!sentence) {
+      Alert.alert('오류', '먼저 문장을 생성해주세요.');
       return;
     }
 
-    const sound = new Sound(fullUrl, '', (error) => {
-      if (error) {
-        console.error('음성 파일 로딩 실패:', error);
-        Alert.alert('오류', '음성 파일을 재생할 수 없습니다.');
+    try {
+      setIsProcessing(true);
+
+      const userId = await AsyncStorage.getItem('userId');
+      const token = await AsyncStorage.getItem('access_token');
+
+      const response = await axiosInstance.post(
+        '/api/sentence/generate/word/tts',
+        {
+          user_id: userId,
+          word,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const { tts_url  } = response.data;
+      const fullUrl = `${axiosInstance.defaults.baseURL}${tts_url }`;
+      if (!tts_url ) {
+        
+        Alert.alert('오류', '음성 파일 경로를 받아오지 못했습니다.');
         return;
       }
-      sound.play((success) => {
-        if (!success) {
-          console.error('재생 실패');
-        }
-        sound.release();
-      });
-    });
 
-  } catch (error) {
-    console.error('TTS 오류:', error);
-    Alert.alert('오류', '음성을 재생하는 중 문제가 발생했습니다.');
-  } finally {
-    setIsProcessing(false);
-  }
-};
+      const sound = new Sound(fullUrl, '', (error) => {
+        if (error) {
+          console.error('음성 파일 로딩 실패:', error);
+          Alert.alert('오류', '음성 파일을 재생할 수 없습니다.');
+          return;
+        }
+        setTtsSound(sound);
+        setIsTtsPlaying(true);
+
+        sound.play((success) => {
+          setIsTtsPlaying(false);
+          sound.release();
+          setTtsSound(null);
+
+          if (!success) {
+            console.error('TTS 재생 실패');
+          }
+        });
+      });
+
+    } catch (error) {
+      console.error('TTS 오류:', error);
+      Alert.alert('오류', '음성을 재생하는 중 문제가 발생했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>

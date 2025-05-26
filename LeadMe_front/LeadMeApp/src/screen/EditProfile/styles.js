@@ -21,12 +21,19 @@ export const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     marginBottom: 10,
+    
   },
-  picker: {
-    width : '100%',
+  pickerWrapper: {
+    width: '100%',
+    borderRadius: 12,
+    borderWidth: 0.7,
+    borderColor: '#000',
     backgroundColor: COLORS.white,
     marginBottom: 20,
-    borderRadius: 12,
+  },
+  picker: {
+    width: '100%',
+    // picker 자체에 배경색 주지 않는 걸 추천
   },
   applyBtn: {
     width : '100%',
