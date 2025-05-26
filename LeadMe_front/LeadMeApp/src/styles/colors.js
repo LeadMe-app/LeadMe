@@ -1,5 +1,5 @@
 export const COLORS = {
-    background: '#FFF6EB', // 배경
+    background: '#FFFFFF', // 배경
     inputBackground: '#DDDDDD', // 입력 창 배경
     primary: '#007BFF', 
     primaryText: '#fff',

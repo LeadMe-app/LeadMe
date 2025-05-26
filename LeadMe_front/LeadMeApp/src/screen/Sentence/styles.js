@@ -10,18 +10,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
       },
   sentence: {
-    fontSize: 16,
+    fontSize: 18,
     color: COLORS.textSecondary,
     marginBottom: 10,
     textAlign: 'center',
-    paddingHorizontal: 20,
   },
   sentenceActive: {
     color: COLORS.errorText,
   },
   dropdown: {
     width: '70%',
-    height: 40,
+    height: 50,
     backgroundColor: COLORS.inputBackground,
     justifyContent: 'center',
     alignItems: 'center',
@@ -113,6 +112,7 @@ const styles = StyleSheet.create({
     width: '100%',         // 줄 길이 (원하면 퍼센트로 조절 가능)
     alignSelf: 'center',  // 가운데 정렬
   },
+  
 });
 
 export default styles;

@@ -3,24 +3,17 @@ import { COLORS } from "../../styles/colors";
 
 export const styles = StyleSheet.create({
   container: {
-      flex: 1,
-      backgroundColor: COLORS.background,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20,
-    },
-  container: {
     flex: 1,
-    backgroundColor: '#FFF6EB',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
+    justifyContent: 'center',
+    padding: 20,
   },
   iconRow: {
     flexDirection: 'row', // 가로 방향 정렬
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: '20%',
+    marginTop: '10%',
     marginBottom: 30,
     gap: 50,
   },

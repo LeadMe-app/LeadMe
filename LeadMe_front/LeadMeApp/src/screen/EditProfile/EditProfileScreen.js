@@ -132,12 +132,15 @@ const EditProfileScreen = ({ navigation }) => {
         updateData.password = password;
       }
 
-      await axiosInstance.put('/api/users/me', updateData, {
+      const response = await axiosInstance.put('/api/users/me', updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
+      const { age_group, username} = response.data;
+      if (age_group) await AsyncStorage.setItem('age_group', age_group);
+      if (username) await AsyncStorage.setItem('username', username);
+      
       Alert.alert('수정 완료', '회원정보가 성공적으로 수정되었습니다!');
     } catch (error) {
       console.error('회원정보 수정 실패:', error);
@@ -187,16 +190,19 @@ const EditProfileScreen = ({ navigation }) => {
       />
       {phoneError ? <Text style={styles.error}>{phoneError}</Text> : null}
 
-      <Picker
-        selectedValue={ageGroup}
-        onValueChange={validateAgeGroup}
-        style={styles.picker}
-      >
-        <Picker.Item label="연령대를 선택하세요." value="" enabled={false} />
-        <Picker.Item label="어린이: 5 ~ 12세" value="5~12세" />
-        <Picker.Item label="청소년: 13세 ~ 19세" value="13~19세" />
-        <Picker.Item label="성인: 20세 이상" value="20세 이상" />
-      </Picker>
+      <View style={styles.pickerWrapper}>
+        <Picker
+          selectedValue={ageGroup}
+          onValueChange={validateAgeGroup}
+          style={styles.picker}
+        >
+          <Picker.Item label="연령대를 선택하세요." value="" enabled={false} />
+          <Picker.Item label="어린이: 5 ~ 12세" value="5~12세" />
+          <Picker.Item label="청소년: 13세 ~ 19세" value="13~19세" />
+          <Picker.Item label="성인: 20세 이상" value="20세 이상" />
+        </Picker>
+      </View>
+
       {ageGroupError ? <Text style={styles.error}>{ageGroupError}</Text> : null}
 
       <TouchableOpacity style={styles.applyBtn} onPress={handleApply}>
