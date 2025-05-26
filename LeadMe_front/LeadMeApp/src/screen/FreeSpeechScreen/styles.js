@@ -49,10 +49,11 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   resultContent: {
-    marginTop: 10,
+    marginTop: 30,
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
+    height: 50,
   },
   feedbackText: {
     color: '#E74C3C',

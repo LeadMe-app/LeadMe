@@ -35,7 +35,7 @@ const RandomWordScreen = ({ navigation }) => {
       const response = await axiosInstance.get('/api/words/random', {
         params: { user_id: userId },
       });
-      console.log('✅ response.data:', response.data); // 이 줄 추가
+      console.log('✅ response.data:', response.data); 
 
       const data = response.data;
       console.log('✅ 랜덤 단어 응답:', data);
