@@ -1,6 +1,8 @@
-import openai
-from openai.error import OpenAIError, RateLimitError, APIError, APIConnectionError, InvalidRequestError, AuthenticationError, Timeout
 import logging
+import openai
+import re
+from openai import OpenAIError
+from openai.error import RateLimitError
 import os
 import asyncio
 from dotenv import load_dotenv
@@ -9,23 +11,19 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # 로그 설정
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)  # 로그 레벨 설정 (INFO, ERROR 등)
-
-# 콘솔에 로그 출력 설정
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)  # 콘솔에 출력할 최소 로그 레벨 설정
+logger = logging.getLogger("sentence_generation")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
-
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # 연령대에 맞는 프롬프트 생성
 def generate_prompt(age_group: str) -> str:
     if age_group == "5~12세":
         return (
             "5~12세 어린이가 문장 발음 연습하기 좋은 짧은 길이의 한국어 문장을 하나 만들어줘. "
-            "내용은 쉽고, 재미있게게 상상력을 자극하는 표현으로 해줘. "
+            "내용은 쉽고, 재미있게 상상력을 자극하는 표현으로 해줘. "
         )
     elif age_group == "13~19세":
         return (
@@ -44,13 +42,21 @@ def generate_prompt(age_group: str) -> str:
             "연령대에 관계없이 누구나 이해할 수 있도록."
         )
 
+# 문장부호 제거 함수
+def remove_punctuation(text: str) -> str:
+    # 한글, 영문, 숫자, 공백만 남기고 모두 제거
+    cleaned = re.sub(r"[^\w\s가-힣]", "", text)
+    # 연속된 공백은 한 칸으로 정리
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
 # GPT 문장 생성 함수
 async def get_sentence_for_age_group(age_group: str) -> str:
-    prompt = f'"{generate_prompt(age_group)} 를 바탕으로 랜덤 문장 생성할거야' \
-         "문장은 반드시 하나만 만들고, 두 줄이 넘지 않도록 15단어 이내의 짧고 간결한 문장으로 해줘. " \
-         "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘."\
-         "되도록이면 따옴표, 문장부호 같은 건 제외해서 문장을 만들어줘."\
-         "문장의 어순이 맞도록, 자연스러운 문장이 되도록, 이질감 없는 문장으로 만들어줘"
+    prompt = f'"{generate_prompt(age_group)} 를 바탕으로 랜덤 문장 생성할거야 ' \
+             "문장은 반드시 하나만 만들고, 두 줄이 넘지 않도록 15단어 이내의 짧고 간결한 문장으로 해줘. " \
+             "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘. " \
+             "문장에는 따옴표, 쉼표, 마침표, 느낌표, 물음표 등 모든 문장 부호를 제외하고 오직 글자와 공백만 포함해서 만들어줘. " \
+             "문장의 어순이 맞도록, 자연스러운 문장이 되도록, 이질감 없는 문장으로 만들어줘."
     logger.info(f"프롬프트 생성: {prompt}")
 
     try:
@@ -65,9 +71,13 @@ async def get_sentence_for_age_group(age_group: str) -> str:
             raise ValueError("OpenAI 응답에 선택지가 없습니다.")
 
         content = response["choices"][0]["message"]["content"].strip()
-        logger.info(f"GPT 응답 수신 완료: {content}")
-        
-        return content
+        logger.info(f"GPT 응답 수신 완료 (원문): {content}")
+
+        # 사후 처리: 문장부호 제거
+        clean_content = remove_punctuation(content)
+        logger.info(f"문장부호 제거 후 문장: {clean_content}")
+
+        return clean_content
 
     except RateLimitError:
         logger.warning("RateLimitError: 호출이 너무 많습니다.")
@@ -79,17 +89,12 @@ async def get_sentence_for_age_group(age_group: str) -> str:
         logger.exception("예기치 못한 오류 발생")
         raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
 
-# 메인 실행
-'''async def main():
+'''
+# 예시 메인 실행 함수
+async def main():
     age_group = "5~12세"
-    speed_label = "천천히"
-    print(f"{age_group}, {speed_label}\n")
-    
     sentence = await get_sentence_for_age_group(age_group)
-    print(f"\n생성된 문장: {sentence}\n")
-
-    speed = get_speed(age_group, speed_label)
-    display_karaoke_text(sentence, speed)
+    print(f"\n[{age_group}] 생성된 문장 (부호 제거됨): {sentence}\n")
 
 if __name__ == "__main__":
     asyncio.run(main())
