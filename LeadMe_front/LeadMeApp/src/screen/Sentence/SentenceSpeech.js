@@ -1,49 +1,318 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Platform,
+} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import styles from './styles';
 import Logo from '../../components/Logo';
-import Sound from '../../icons/sound_icons.svg';
+import Speaker from '../../icons/Speaker_icons.svg';
 import Micro from '../../icons/microphone_icons.svg';
 import Stop from '../../icons/stop_icons.svg';
 import Play from '../../icons/play_icons.svg';
+import axiosInstance from '../../config/axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Sound from 'react-native-sound';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
-const SentenceSpeech = ({navigation}) => {
+const SentenceSpeech = ({ navigation }) => {
   const [isPracticing, setIsPracticing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [sentence, setSentence] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [recordedPath, setRecordedPath] = useState('');
+  const [selectedSpeed, setSelectedSpeed] = useState('');
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [ageGroup, setAgeGroup] = useState('20세 이상');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isManualRecording, setIsManualRecording] = useState(false); // 
 
-  const handlePracticeToggle = () => {
-    setIsPracticing(prev => !prev);
+  const intervalRef = useRef(null);
+  const audioRecorderPlayer = useRef(null);
+
+  const [isTTSPlaying, setIsTTSPlaying] = useState(false);
+  const ttsSoundRef = useRef(null);
+   useEffect(() => {
+    audioRecorderPlayer.current = new AudioRecorderPlayer();
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+  const getDelayFromSPS = (sps) => Math.round((1000 / sps) * 0.9);
+  // 속도 매핑 (밀리초 단위)
+  const speedMap = {
+    '5~12세': {
+      느림: getDelayFromSPS(2.5),  // ~360ms
+      중간: getDelayFromSPS(3.5),  // ~257ms
+      빠름: getDelayFromSPS(4.5),  // ~200ms
+    },
+    '13~19세': {
+      느림: getDelayFromSPS(3.5),  // ~257ms
+      중간: getDelayFromSPS(4.5),  // ~200ms
+      빠름: getDelayFromSPS(5.5),  // ~164ms
+    },
+    '20세 이상': {
+      느림: getDelayFromSPS(4.5),  // ~200ms
+      중간: getDelayFromSPS(5.5),  // ~164ms
+      빠름: getDelayFromSPS(6.5),  // ~138ms
+    },
   };
 
-  const handleRecordToggle = () => {
-    setIsRecording(prev => !prev);
-    // TODO: 실제 녹음 start/stop 로직 연결
+  // 문장을 음절 단위로 쪼갬
+  const syllables = Array.from(sentence);
+
+  // 노래방 애니메이션 시작
+  const startKaraokeAnimation = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setHighlightIndex(0);
+    setIsAnimating(true);
+
+    const delay =
+      (speedMap[ageGroup] && speedMap[ageGroup][selectedSpeed]) || 300;
+
+    let index = 0;
+
+    const animate = () => {
+    intervalRef.current = setInterval(() => {
+      setHighlightIndex((prev) => {
+        if (index + 1 >= syllables.length) {
+          clearInterval(intervalRef.current); // 현재 사이클 종료
+          setTimeout(() => {
+            index = 0;
+            setHighlightIndex(0);
+            animate(); // 다시 시작
+          }, 1000); // 💡 1.5초 쉬기
+          return prev; // 인덱스 증가 X
+        } else {
+          index++;
+          return prev + 1;
+        }
+      });
+    }, delay);
   };
 
-  const handlePlayPress = () => {
-    // TODO: 녹음된 파일 재생 로직 연결
+  animate(); // 애니메이션 시작
+};
+
+  // 노래방 애니메이션 종료
+  const stopKaraokeAnimation = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setHighlightIndex(-1);
+    setIsAnimating(false);
   };
 
+  // 연습 시작/종료 토글 (녹음 + 노래방 효과 동시)
+  const handlePracticeToggle = async () => {
+     if (!selectedSpeed || selectedSpeed.trim() === '') {
+      Alert.alert('알림', '먼저 속도를 선택해주세요.');
+      return;
+    }
+    if (!isPracticing) {
+      try {
+        const result = await audioRecorderPlayer.current.startRecorder();
+        audioRecorderPlayer.current.addRecordBackListener(() => {});
+        setRecordedPath(result);
+        setIsRecording(true);
+        setIsPracticing(true);
+
+        startKaraokeAnimation();
+      } catch (e) {
+        console.error('녹음 시작 실패:', e);
+        Alert.alert('오류', '녹음 시작에 실패했습니다.');
+      }
+    } else {
+      await stopPractice();
+    }
+  };
+
+  const handlePlayPress = async () => {
+    if (recordedPath) {
+      const path =
+        Platform.OS === 'android'
+          ? recordedPath.replace('file://', '')
+          : recordedPath;
+      console.log('재생할 경로', path);
+
+      const sound = new Sound(path, '', (error) => {
+        if (error) {
+          console.log('재생 초기화 실패', error);
+          return;
+        }
+        sound.play((success) => {
+          if (success) {
+            console.log('재생 완료');
+          } else {
+            console.log('재생 중 오류 발생');
+          }
+        });
+      });
+    }
+  };
+
+  // 문장 불러오기
+  const fetchSentence = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      const response = await axiosInstance.post('/api/sentence/generate', {
+        user_id: userId,
+      });
+
+      if (response.data.sentence) {
+        const cleanedSentence = response.data.sentence.replace(/^"(.*)"$/, '$1').replace(/[!,.?"'，。！？、]/g, '');;
+        setSentence(cleanedSentence);
+      } else {
+        Alert.alert('오류', '문장을 불러오지 못했습니다.');
+      }
+    } catch (error) {
+      console.error('문장 불러오기 오류:', error);
+      Alert.alert('오류', '문장을 불러오는 중 문제가 발생했습니다.');
+    }
+  };
+
+  // 유저 연령대 AsyncStorage에서 불러오기
+  const fetchAgeGroup = async () => {
+    const storedAgeGroup = await AsyncStorage.getItem('age_group');
+    if (storedAgeGroup) {
+      setAgeGroup(storedAgeGroup);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgeGroup();
+    fetchSentence();
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  // TTS 요청 및 재생 (기존 코드 유지)
+  const requestTTSAndPlay = async () => {
+    if (isTTSPlaying && ttsSoundRef.current) {
+      // 🔇 이미 재생 중이면 정지
+      ttsSoundRef.current.stop(() => {
+        console.log('TTS 정지');
+        ttsSoundRef.current.release();
+        ttsSoundRef.current = null;
+        setIsTTSPlaying(false);
+      });
+      return;
+    }
+    try {
+      setIsProcessing(true);
+      const userId = await AsyncStorage.getItem('userId');
+      const token = await AsyncStorage.getItem('access_token');
+
+      const params = new URLSearchParams({
+        text: sentence,
+        user_id: userId,
+        speaker: 'Seoyeon',
+        speed: '중간',
+        age_group: '13세~19세',
+      });
+
+      const response = await axiosInstance.post(
+        `/api/tts/text-to-speech/?${params.toString()}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const { file_url } = response.data;
+      if (!file_url) {
+        Alert.alert('오류', '음성 파일 경로를 받아오지 못했습니다.');
+        return;
+      }
+
+      const fullUrl = `${axiosInstance.defaults.baseURL}${file_url}`;
+      const sound = new Sound(fullUrl, null, (error) => {
+        if (error) {
+          console.error('TTS 로딩 실패:', error);
+          Alert.alert('오류', 'TTS 재생 실패');
+          return;
+        }
+        ttsSoundRef.current = sound; 
+        setIsTTSPlaying(true);   
+
+        sound.play(() => {
+          sound.release();
+          ttsSoundRef.current = null;
+          setIsTTSPlaying(false);   // ✅ 재생 끝나면 상태 OFF
+        });
+      });
+    } catch (error) {
+      console.error('TTS 오류:', error);
+      Alert.alert('TTS 실패');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const stopPractice = async () => {
+    try {
+      if (audioRecorderPlayer.current) {
+        await audioRecorderPlayer.current.stopRecorder();
+        audioRecorderPlayer.current.removeRecordBackListener();
+      }
+    } catch (e) {
+      console.error('녹음 종료 실패:', e);
+    } finally {
+      setIsRecording(false);
+      setIsPracticing(false);
+      stopKaraokeAnimation();
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Logo />
-      <Text style={[styles.sentence, isPracticing && styles.sentenceActive]}>
-        나는 <Text style={styles.boldText}>천천히 또박또박</Text> 말하는 연습을 하고 있어요.
-      </Text> 
-
-      <View style={styles.underline} />
-
-      <View style={styles.topRow}>
-        <TouchableOpacity>
-          <Sound width={40} height={40} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.dropdown}>
-          <Text style={styles.dropdownText}>원하는 속도를 선택하세요</Text>
-        </TouchableOpacity>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 }}>
+        {syllables.length > 0 ? (
+          syllables.map((char, idx) => (
+            <Text
+              key={idx}
+              style={{
+                ...styles.sentence,
+                color: idx === highlightIndex ? '#FF3B30' : '#000',
+                fontWeight: idx === highlightIndex ? 'bold' : 'normal',
+              }}
+            >
+              {char}
+            </Text>
+          ))
+        ) : (
+          <Text style={styles.sentence}>문장을 불러오는 중...</Text>
+        )}
       </View>
-      
-      <TouchableOpacity 
+         <View style={styles.underline} />
+      <View style={styles.topRow}>
+        <TouchableOpacity onPress={requestTTSAndPlay} disabled={isProcessing}>
+          <Speaker width={40} height={40} />
+        </TouchableOpacity>
+
+        <Picker
+          selectedValue={selectedSpeed}
+          onValueChange={(value) => setSelectedSpeed(value)}
+          mode="dropdown"
+          style={{
+            ...styles.dropdown,
+            color: '#000',
+            fontFamily: undefined,
+          }}
+          itemStyle={{ color: '#000' }}
+          enabled={!isPracticing}
+        >
+          <Picker.Item label="원하는 속도를 선택하세요" value=" " enabled={false}/>
+          <Picker.Item label="느림" value="느림" />
+          <Picker.Item label="중간" value="중간" />
+          <Picker.Item label="빠름" value="빠름" />
+        </Picker>
+      </View>
+
+      <TouchableOpacity
         style={isPracticing ? styles.stopButton : styles.startButton}
         onPress={handlePracticeToggle}
       >
@@ -52,17 +321,16 @@ const SentenceSpeech = ({navigation}) => {
         </Text>
       </TouchableOpacity>
 
-      {/* 녹음 & 재생 아이콘 */}
       <View style={styles.iconRow}>
-        <TouchableOpacity onPress={handleRecordToggle}  >
-          {isRecording
-            ? <Stop width={50} height={50} />
-            : <Micro width={50} height={50} />
-          }
-          <Text style={styles.iconLabel}>
-            {isRecording ? '중지' : '녹음'}
-          </Text>
+        <TouchableOpacity disabled>
+          {isRecording ? (
+            <Stop width={50} height={50} />
+          ) : (
+            <Micro width={50} height={50} />
+          )}
+          <Text style={styles.iconLabel}>{isRecording ? '녹음중' : '녹음'}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity onPress={handlePlayPress} style={styles.iconWithLabel}>
           <Play width={50} height={50} />
           <Text style={styles.iconLabel}>재생</Text>
@@ -70,10 +338,23 @@ const SentenceSpeech = ({navigation}) => {
       </View>
 
       <View style={styles.bottomButtons}>
-        <TouchableOpacity style={styles.endButton} onPress={() => navigation.navigate('SelectSpeechTypeScreen')}>
-          <Text style={styles.bottomButtonText}>치료 종료</Text>
+        <TouchableOpacity
+          style={styles.endButton}
+          onPress={async () => {
+            if (isPracticing) await stopPractice(); // ← 연습 중이면 종료
+            navigation.navigate('SelectSpeechTypeScreen');
+          }}
+        >
+        <Text style={styles.bottomButtonText}>치료 종료</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.otherButton}>
+        
+        <TouchableOpacity
+          style={styles.otherButton}
+          onPress={async () => {
+            if (isPracticing) await stopPractice(); // ← 연습 중이면 종료
+            fetchSentence();
+          }}
+        >
           <Text style={styles.bottomButtonText}>다른 문장</Text>
         </TouchableOpacity>
       </View>

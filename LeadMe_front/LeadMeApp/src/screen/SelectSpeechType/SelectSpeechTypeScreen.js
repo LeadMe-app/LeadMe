@@ -16,7 +16,7 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
           },
         });
         const username = res.data.username;
-        navigation.navigate('HomeScreen', { username });
+        navigation.navigate('HomeScreen');
       } else {
         console.warn('토큰이 없습니다.');
       }

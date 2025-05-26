@@ -42,17 +42,19 @@ const LoginScreen = ({ navigation }) => {
       {/* 로그인 성공 시 토큰 저장 */}
       await AsyncStorage.setItem('access_token', access_token);
       await AsyncStorage.setItem('userId', userId.toString()); 
-
+        
       const userInfoRes = await axiosInstance.get('/api/users/me', {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       });
   
-      const { username } = userInfoRes.data;
-
+      const { username,  age_group } = userInfoRes.data;
+      await AsyncStorage.setItem('age_group', age_group);
+      await AsyncStorage.setItem('username', username);
+      
       console.log('로그인 성공 및 토큰 저장 완료!', res.data);
-      navigation.navigate('HomeScreen', { username });
+      navigation.navigate('HomeScreen');
     } catch (err) {
       console.error('로그인 실패:', err.response?.data || err);
       setErrors({ general: '로그인에 실패했습니다. 정보를 확인해주세요.' });

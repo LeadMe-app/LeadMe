@@ -8,7 +8,7 @@ import Logo from '../../components/Logo';
 import BackButton from '../../components/BackButton';
 import Microphone from '../../icons/microphone_icons.svg';
 import Stop from '../../icons/stop_icons.svg';
-import Scound from '../../icons/sound_icons.svg';
+import Speaker from '../../icons/Speaker_icons.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
@@ -118,7 +118,7 @@ const FreeSpeechScreen = ({ navigation }) => {
 
             {recordedFilePath && (
               <TouchableOpacity onPress={handlePlayPress}>
-                <Scound width={80} height={80} />
+                <Speaker width={80} height={80} />
                 <Text style={styles.iconText}>재생</Text>
               </TouchableOpacity>
             )}
