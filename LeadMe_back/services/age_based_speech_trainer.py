@@ -30,13 +30,13 @@ def generate_prompt(age_group: str) -> str:
         return (
             "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
             "너무 유치하지 않게, 자연스럽고 일상적인 상황에서 쓰는 표현으로 해줘. "
-            "문장은 한 문장이지만 너무 짧지 않게, 적당한 길이로 만들어줘 (약 20~25단어)."
+            "현실적인 주제를 포함해서, 한 문장이지만, 약 15~20단어어 길이로 만들어줘."
         )
     elif age_group == "20세 이상":
         return (
             "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
             "자연스럽고 실생활에서 자주 쓰는 대화나 표현으로 하고, "
-            "현실적인 주제를 포함해서, 한 문장이지만 적당한 길이(20~30단어)로 만들어줘."
+            "현실적인 주제를 포함해서, 한 문장이지만 약 20~25단어 길이로 만들어줘."
         )
     else:
         return (
@@ -54,9 +54,10 @@ def remove_punctuation(text: str) -> str:
 # GPT 문장 생성 함수
 async def get_sentence_for_age_group(age_group: str) -> str:
     prompt = (
-    f"{generate_prompt(age_group)} "
-    "문장은 반드시 하나만 만들어줘. "
-    "문장의 어순이 자연스럽고 발화 연습에 적절한 흐름이 되도록 해줘."
+        f"{generate_prompt(age_group)} "
+        "문장은 반드시 하나만 만들어줘. "
+        "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘."
+        "문장의 어순이 자연스럽고 발화 연습에 적절한 흐름이 되도록 해줘."
     )
 
     logger.info(f"프롬프트 생성: {prompt}")
@@ -92,13 +93,12 @@ async def get_sentence_for_age_group(age_group: str) -> str:
         raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
 
 
-'''
+
 # 예시 메인 실행 함수
 async def main():
-    age_group = "5~12세"
-    sentence = await get_sentence_for_age_group(age_group)
-    print(f"\n[{age_group}] 생성된 문장 (부호 제거됨): {sentence}\n")
+    for age in ["5~12세", "13~19세", "20세 이상"]:
+        sentence = await get_sentence_for_age_group(age)
+        print(f"[{age}] 생성된 문장:\n{sentence}\n")
 
 if __name__ == "__main__":
     asyncio.run(main())
-'''
