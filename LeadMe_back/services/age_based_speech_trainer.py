@@ -3,7 +3,6 @@ from openai.error import OpenAIError, RateLimitError, APIError, APIConnectionErr
 import logging
 import os
 import asyncio
-import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,39 +20,38 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
-# 연령대별 속도 맵 (단어 수 기준)
-age_group_speed_map = {
-    '5~12세': {
-        '천천히': 2,   # 1초에 2단어
-        '중간': 3,     # 1초에 3단어
-        '빠르게': 4      # 1초에 4단어
-    },
-    '13~19세': {
-        '천천히': 3,   # 1초에 3단어
-        '중간': 5,     # 1초에 5단어
-        '빠르게': 6      # 1초에 6단어
-    },
-    '20세 이상': {
-        '천천히': 4,   # 1초에 4단어
-        '중간': 6,     # 1초에 6단어
-        '빠르게': 8      # 1초에 8단어
-    }
-}
-
 # 연령대에 맞는 프롬프트 생성
 def generate_prompt(age_group: str) -> str:
     if age_group == "5~12세":
-        return "5~12세 어린이가 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. 단어는 쉽고 재미있게!"
+        return (
+            "5~12세 어린이가 문장 발음 연습하기 좋은 짧은 길이의 한국어 문장을 하나 만들어줘. "
+            "내용은 쉽고, 재미있게게 상상력을 자극하는 표현으로 해줘. "
+        )
     elif age_group == "13~19세":
-        return "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 만들어줘. 너무 유치하지 않게, 자연스럽고 일상적인 표현으로!"
+        return (
+            "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
+            "너무 유치하지 않게, 자연스럽고 일상적인 상황에서 쓰는 표현으로 하고, "
+        )
     elif age_group == "20세 이상":
-        return "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 만들어줘. 자연스럽고 실생활에서 쓸 수 있는 문장으로 부탁해."
+        return (
+            "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
+            "자연스럽고 실생활에서 자주 쓰는 대화나 표현으로 하고, "
+            "20세 이상의 연령대에 적절한 문체를 사용해서, 현실적인 주제를 포함한 문장으로 만들어줘."
+        )
     else:
-        return "발음 연습용 쉬운 한국어어 문장을 만들어줘."
+        return (
+            "발음 연습용으로 자연스럽고 명확한 한국어 문장을 하나 만들어줘. "
+            "연령대에 관계없이 누구나 이해할 수 있도록."
+        )
 
 # GPT 문장 생성 함수
 async def get_sentence_for_age_group(age_group: str) -> str:
-    prompt = generate_prompt(age_group)
+    prompt = f'"{generate_prompt(age_group)} 를 바탕으로 랜덤 문장 생성할거야' \
+         "문장은 반드시 하나만 만들고, 두 줄이 넘지 않도록 15단어 이내의 짧고 간결한 문장으로 해줘. " \
+         "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘."\
+         "되도록이면 따옴표, 문장부호 같은 건 제외해서 문장을 만들어줘."\
+         "문장의 어순이 맞도록, 자연스러운 문장이 되도록, 이질감 없는 문장으로 만들어줘"
+    logger.info(f"프롬프트 생성: {prompt}")
 
     try:
         response = await asyncio.to_thread(
@@ -96,18 +94,6 @@ async def get_sentence_for_age_group(age_group: str) -> str:
     except OpenAIError as e:
         logger.error(f"OpenAIError: {str(e)}")
         return f"OpenAI 오류 발생: {str(e)}"
-
-# 속도 값 계산
-def get_speed(age_group: str, speed_label: str) -> float:
-    return age_group_speed_map.get(age_group, {}).get(speed_label, 4)
-
-# 노래방 효과 출력
-def display_karaoke_text(text: str, speed: float):
-    print("\n[노래방 효과 시작]\n")
-    for char in text:
-        print(char, end='', flush=True)
-        time.sleep(1 / speed)
-    print("\n[종료]\n")
 
 # 메인 실행
 '''async def main():
