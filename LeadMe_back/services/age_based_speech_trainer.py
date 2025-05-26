@@ -60,40 +60,24 @@ async def get_sentence_for_age_group(age_group: str) -> str:
             messages=[{"role": "user", "content": prompt}],
         )
 
-        # 응답이 없으면 오류 처리
-        if not response.get('choices'):
+        if not response.get("choices"):
+            logger.error("OpenAI 응답에 선택지가 없습니다.")
             raise ValueError("OpenAI 응답에 선택지가 없습니다.")
+
+        content = response["choices"][0]["message"]["content"].strip()
+        logger.info(f"GPT 응답 수신 완료: {content}")
         
-        # 응답 반환
-        return response['choices'][0]['message']['content'].strip()
+        return content
 
     except RateLimitError:
-        logger.error("RateLimitError: 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
-        return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."
-
-    except AuthenticationError:
-        logger.error("AuthenticationError: OpenAI 인증 오류가 발생했습니다. API 키를 확인해주세요.")
-        return "OpenAI 인증 오류가 발생했습니다. API 키를 확인해주세요."
-
-    except Timeout:
-        logger.error("Timeout: OpenAI 요청이 시간 초과되었습니다.")
-        return "OpenAI 요청이 시간 초과되었습니다."
-
-    except InvalidRequestError as e:
-        logger.error(f"InvalidRequestError: 잘못된 요청입니다: {str(e)}")
-        return f"잘못된 요청입니다: {str(e)}"
-
-    except APIConnectionError:
-        logger.error("APIConnectionError: OpenAI 서버에 연결할 수 없습니다.")
-        return "OpenAI 서버에 연결할 수 없습니다."
-
-    except APIError:
-        logger.error("APIError: OpenAI 서버 오류가 발생했습니다.")
-        return "OpenAI 서버 오류가 발생했습니다."
-
+        logger.warning("RateLimitError: 호출이 너무 많습니다.")
+        raise RuntimeError("OpenAI API 호출이 너무 많습니다. 잠시 후 다시 시도해주세요.")
     except OpenAIError as e:
-        logger.error(f"OpenAIError: {str(e)}")
-        return f"OpenAI 오류 발생: {str(e)}"
+        logger.error(f"OpenAIError 발생: {str(e)}")
+        raise RuntimeError(f"OpenAI 오류가 발생했습니다: {str(e)}")
+    except Exception as e:
+        logger.exception("예기치 못한 오류 발생")
+        raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
 
 # 메인 실행
 '''async def main():
