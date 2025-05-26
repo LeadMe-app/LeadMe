@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
 from typing import List, Optional
 import os
 import tempfile
@@ -19,7 +20,6 @@ from schemas.user import UserSettingsCreate, UserSettingsResponse
 from app.api.auth import get_current_user
 from services.openai_stt import OpenAISTTService
 #from services.naver_clova import NaverClovaService
-
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -59,34 +59,13 @@ def inspect_audio_file(path: str):
 
 
 @router.post("/analyze-audio-file/", status_code=status.HTTP_201_CREATED)
-async def analyze_audio_file(    
-    file: UploadFile = File(...),
+async def analyze_audio_file(
+        file: UploadFile = File(...),
         background_tasks: BackgroundTasks = None,
         db: Session = Depends(get_db),
         current_user: models.User = Depends(get_current_user)
 ):
-<<<<<<< HEAD
     logger.info(f"[START] analyze_audio_file called - filename: {file.filename}, user_id: {current_user.user_id}")
-=======
-    print(f"🔍 DEBUG: 파일명={file.filename}")
-    print(f"🔍 DEBUG: 사용자={current_user.user_id if current_user else 'None'}")
-    print(f"🔍 DEBUG: 파일 크기={file.size if hasattr(file, 'size') else 'unknown'}")
-    """
-    음성 파일을 분석하여 발화 속도를 측정하고 결과를 DB에 저장합니다.
-    현재 로그인한 사용자의 ID가 자동으로 사용됩니다.
-    네이버 클로바 STT를 활용하여 더 정확한 음절 수를 계산합니다.
-
-    Args:
-        file: 분석할 음성 파일
-        background_tasks: 백그라운드 작업
-        db: 데이터베이스 세션
-        current_user: 현재 로그인한 사용자
-
-    Returns:
-        분석 결과
-    """
-    print("파일 이름:", file.filename)  # <- 추가
->>>>>>> 6547e0c219b205a3cca91f384e7ee2dc84161ca5
 
     # 파일 확장자 검증
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
@@ -225,7 +204,8 @@ async def analyze_audio_file(
         analysis_result["file_url"] = f"/uploads/audio/{permanent_filename}"
 
         logger.info("[END] analyze_audio_file 성공적으로 종료")
-        return analysis_result
+
+        return JSONResponse(status_code=201, content=analysis_result)
 
     except Exception as e:
         logger.error(f"[ERROR] 음성 분석 중 예외 발생: {str(e)}", exc_info=True)
