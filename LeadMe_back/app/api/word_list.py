@@ -187,7 +187,7 @@ def add_word_to_favorites(
 def read_favorites(
         user_id: Optional[str] = None,
         skip: int = 0,
-        limit: int = 100,
+        limit: int = 188,
         db: Session = Depends(get_db)
 ):
     """사용자의 즐겨찾기 단어 목록을 반환합니다."""
@@ -196,7 +196,7 @@ def read_favorites(
     if user_id:
         query = query.filter(models.WordFavorites.user_id == user_id)
 
-    favorites = query.offset(skip).limit(limit)
+    favorites = query.offset(skip).limit(limit).all()
     return favorites
 
 
