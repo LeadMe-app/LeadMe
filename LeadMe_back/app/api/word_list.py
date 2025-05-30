@@ -27,10 +27,12 @@ def read_words(
     # 즐겨찾기 정보 미리 조회
     favorite_word_ids = set()
     if user_id:
-        favorites = db.query(models.WordFavorites.word_id).filter(
-            models.WordFavorites.user_id == user_id
-        ).all()
-        favorite_word_ids = set(fav.word_id for fav in favorites)
+        favorite_word_ids = set(
+            db.scalars(
+                db.query(models.WordFavorites.word_id)
+                .filter(models.WordFavorites.user_id == user_id)
+            ).all()
+        )
 
     # is_favorite 포함한 응답 리스트 구성
     result = []
