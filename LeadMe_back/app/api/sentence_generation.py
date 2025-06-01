@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from database import get_db
 from models import User
-from services.age_based_speech_trainer import get_sentence_for_age_group
+from services.age_based_speech_trainer import get_sentence_for_age_group, get_sentence_with_retry_if_needed
 from services.word_based_speech_trainer import get_sentence_for_word_and_age
 from services.amazon_polly import AmazonPollyService
 from services.stuttering_tts_service import StutteringTTSService
@@ -28,7 +28,7 @@ async def generate_sentence(data: SentenceRequest, db: Session = Depends(get_db)
         return {"error": "사용자를 찾을 수 없습니다."}
 
     # 문장 생성
-    sentence = await get_sentence_for_age_group(user.age_group)
+    sentence = await get_sentence_with_retry_if_needed(user.age_group)
 
     sentences_cache[data.user_id] = sentence
     return {"sentence": sentence}
