@@ -4,9 +4,11 @@ import { styles } from './styles';
 import Logo from '../../components/Logo';
 import Icon from '../../icons/home_icons.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LeadMeModal from '../../components/LeadMeModal';
 
 const HomeScreen = ({ navigation }) => {
-     const [username, setUsername] = useState('');
+    const [username, setUsername] = useState('');
+    const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const loadUserName = async () => {
@@ -47,9 +49,13 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.optionSubtitle}>말을 너무 더듬는 사람에게 추천.</Text>
     </TouchableOpacity>
 
-      <TouchableOpacity style={styles.questionBox}>
+      <TouchableOpacity 
+        style={styles.questionBox}
+        onPress={() => setModalVisible(true)}
+      >
         <Text style={styles.questionText}>리드미란?</Text>
       </TouchableOpacity>
+      <LeadMeModal visible={modalVisible} onClose={() => setModalVisible(false)} />
     </View>
   );
 };

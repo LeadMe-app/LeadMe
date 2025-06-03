@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     width: '70%',  // 아이콘 그룹 가로폭
-    marginTop: 150,
+    marginTop: 100,
   },
   
   iconWithLabel: {

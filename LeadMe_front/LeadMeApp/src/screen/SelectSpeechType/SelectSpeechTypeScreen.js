@@ -34,7 +34,7 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
         onPress={() => navigation.navigate('FreeSpeechScreen')}
       >
         <Text style={styles.optionTitle}>직접 발화</Text>
-        <Text style={styles.optionSubtitle}>자유롭게 말합니다</Text>
+        <Text style={styles.optionSubtitle}>자유롭게 말합니다. 속도 분석 기능 제공</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -42,7 +42,7 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
         onPress={() => navigation.navigate('SentenceSpeech')}
       >
         <Text style={styles.optionTitle}>문장 발화</Text>
-        <Text style={styles.optionSubtitle}>제공된 문장을 따라 읽습니다</Text>
+        <Text style={styles.optionSubtitle}>제공된 문장을 따라 읽습니다. 발화 속도 조절 연습</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
