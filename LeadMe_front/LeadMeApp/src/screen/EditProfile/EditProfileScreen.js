@@ -126,6 +126,7 @@ const EditProfileScreen = ({ navigation }) => {
         username: nickname,
         phone_number: phone,
         age_group: ageGroup,
+        password: password
       };
 
       if (password && password.trim().length > 0) {
