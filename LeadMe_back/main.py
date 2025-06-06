@@ -12,7 +12,7 @@ import openai
 # 내부 모듈 임포트
 from database import get_db, engine
 import models
-from app.api import users, speech_sessions, word_list, speed_analysis, speech_recognition, auth, sentence_generation, tts
+from app.api import users, speech_sessions, word_list, speed_analysis, auth, sentence_generation, tts
 
 # 기본 디렉토리 생성
 os.makedirs("uploads/audio", exist_ok=True)
