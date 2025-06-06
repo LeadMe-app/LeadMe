@@ -1,5 +1,3 @@
-// src/screen/PreExperience/PreExperienceScreen.js
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,7 +11,7 @@ import {
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import Sound from 'react-native-sound';
 import axiosInstance from '../../config/axiosInstance';
-import styles from '../FreeSpeechScreen/styles'
+import {styles} from './styles'
 import Logo from '../../components/Logo';
 import Microphone from '../../icons/microphone_icons.svg';
 import StopIcon from '../../icons/stop_icons.svg';
@@ -22,8 +20,6 @@ import SpeakerIcon from '../../icons/Speaker_icons.svg';
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const PreExperienceScreen = ({ navigation }) => {
-  // ───────────────────────────────────────────────────────────────
-  // React Hooks는 컴포넌트 최상위에서만 호출합니다
   const [isRecording, setIsRecording] = useState(false);
   const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [speechSpeed, setSpeechSpeed] = useState(null);
@@ -32,7 +28,6 @@ const PreExperienceScreen = ({ navigation }) => {
 
   // “평균 SPM 보기” 토글 상태
   const [showAverageSpm, setShowAverageSpm] = useState(false);
-  // ───────────────────────────────────────────────────────────────
 
   // (선택) 안드로이드 뒤로가기 버튼 무시
   useEffect(() => {
@@ -220,9 +215,9 @@ const PreExperienceScreen = ({ navigation }) => {
 
       {showAverageSpm && (
         <View style={styles.avgSpmBox}>
-          <Text style={styles.avgSpmText}>5~12세 평균 SPM: 120</Text>
-          <Text style={styles.avgSPMText}>13~19세 평균 SPM:</Text>
-          <Text style={styles.avgSPMText}>20세 이상 평균 SPM</Text>
+          <Text style={styles.avgSpmText}>5~12세 평균 SPM: 111 ~ 160</Text>
+          <Text style={styles.avgSPMText}>13~19세 평균 SPM: 141 ~ 250</Text>
+          <Text style={styles.avgSPMText}>20세 이상 평균 SPM: 181 ~ 280</Text>
         </View>
       )}
 

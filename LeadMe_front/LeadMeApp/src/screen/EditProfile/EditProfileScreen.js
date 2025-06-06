@@ -126,6 +126,7 @@ const EditProfileScreen = ({ navigation }) => {
         username: nickname,
         phone_number: phone,
         age_group: ageGroup,
+        password: password
       };
 
       const isPasswordChanged = !!password;
@@ -152,7 +153,7 @@ const EditProfileScreen = ({ navigation }) => {
             await AsyncStorage.removeItem('access_token');
             navigation.reset({
               index: 0,
-              routes: [{ name: 'LoginScreen' }],
+              routes: [{ name: 'Login' }],
             });
           },
         },
