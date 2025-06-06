@@ -66,7 +66,8 @@ async def analyze_audio_file(
         current_user: models.User = Depends(get_current_user)
 ):
     logger.info(f"[START] analyze_audio_file called - filename: {file.filename}, user_id: {current_user.user_id}")
-
+    logger.info(f"[ROUTER CALLED] POST /analyze-audio-file/ - {file.filename}")
+    
     # 파일 확장자 검증
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
         logger.warning(f"지원되지 않는 파일 형식: {file.filename}")
