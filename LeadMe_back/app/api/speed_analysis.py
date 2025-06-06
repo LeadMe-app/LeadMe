@@ -93,10 +93,14 @@ async def analyze_audio_file(
             wav_temp_file.close()
 
             logger.info(f"wav 변환 시작: {temp_file_path} -> {wav_temp_path}")
-            convert_m4a_to_wav(temp_file_path, wav_temp_path)
-            logger.info("wav 변환 완료")
-            inspect_audio_file(wav_temp_path)
-            used_audio_path = wav_temp_path
+            try:
+                convert_m4a_to_wav(temp_file_path, wav_temp_path)
+                logger.info("wav 변환 완료")
+                inspect_audio_file(wav_temp_path)
+                used_audio_path = wav_temp_path
+            except Exception as e:
+                logger.error(f"wav 변환 실패: {e}")
+                raise RuntimeError("m4a 파일을 wav로 변환하는 중 오류가 발생했습니다.")
         else:
             used_audio_path = temp_file_path
             logger.info("wav 변환 불필요, 원본 사용")
