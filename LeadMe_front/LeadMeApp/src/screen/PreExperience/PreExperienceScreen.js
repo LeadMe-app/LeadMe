@@ -13,7 +13,7 @@ import {
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import Sound from 'react-native-sound';
 import axiosInstance from '../../config/axiosInstance';
-
+import styles from '../FreeSpeechScreen/styles'
 import Logo from '../../components/Logo';
 import Microphone from '../../icons/microphone_icons.svg';
 import StopIcon from '../../icons/stop_icons.svg';
@@ -221,8 +221,8 @@ const PreExperienceScreen = ({ navigation }) => {
       {showAverageSpm && (
         <View style={styles.avgSpmBox}>
           <Text style={styles.avgSpmText}>5~12세 평균 SPM: 120</Text>
-          <Text style={styles.avgSPMText}>13~19세 평균 SPM: 250</Text>
-          <Text style={styles.avgSPMText}>20세 이상 평균 SPM: 350</Text>
+          <Text style={styles.avgSPMText}>13~19세 평균 SPM:</Text>
+          <Text style={styles.avgSPMText}>20세 이상 평균 SPM</Text>
         </View>
       )}
 
@@ -240,115 +240,3 @@ const PreExperienceScreen = ({ navigation }) => {
 
 export default PreExperienceScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF8F0',
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-  },
-  // 버튼을 가로로 배치
-  buttonRow: {
-    flexDirection: 'row',            // 가로 정렬
-    marginTop: 40,
-    justifyContent: 'space-evenly',  // 버튼 사이 간격 균등 배치
-    alignItems: 'center',
-    width: '80%',                    // 부모 너비의 80% 차지
-  },
-  buttonWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-  },
-  buttonText: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#333',
-  },
-
-  speedContainer: {
-    width: '80%',
-    marginTop: 30,
-    alignItems: 'center',
-  },
-  speedLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    backgroundColor: '#FFDDAA',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    color: '#333',
-  },
-  speedBox: {
-    marginTop: 12,
-    width: '100%',
-    height: 120,
-    backgroundColor: '#FFFDF8',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  speedText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  speedPlaceholder: {
-    fontSize: 18,
-    color: '#AAA',
-  },
-  feedbackText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-
-  // 평균 SPM 보기 아이콘 위치
-  infoIconWrapper: {
-    marginTop: 20,
-    padding: 8,
-  },
-  infoIconText: {
-    fontSize: 24,
-    color: '#333',
-  },
-
-  // 평균 SPM 텍스트 박스
-  avgSpmBox: {
-    marginTop: 8,
-    backgroundColor: '#FFFDF8',
-    borderWidth: 1,
-    borderColor: '#FFDDAA',
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    width: '70%',
-    alignItems: 'center',
-  },
-  avgSpmText: {
-    fontSize: 16,
-    color: '#333',
-  },
-
-  endButton: {
-    position: 'absolute',
-    bottom: 40,
-    width: '80%',
-    height: 50,
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  endButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
