@@ -335,6 +335,41 @@ async def check_phone_number(
         "message": "사용 가능한 전화번호입니다."
     }
 
+@router.post("/login-check-phone-number")
+async def check_phone_number_for_update(
+        phone_check: PhoneNumberCheck,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    """
+    회원정보 수정용 전화번호 중복 확인 (본인 번호는 검사 생략)
+    """
+    # 본인의 기존 번호와 같은 경우 - 검사 없이 바로 통과
+    if phone_check.phone_number == current_user.phone_number:
+        return {
+            "available": True,
+            "message": "기존 번호와 동일합니다.",
+            "is_same_number": True  # 프론트엔드에서 구분할 수 있도록
+        }
+
+    # 다른 번호인 경우에만 중복 검사 진행
+    db_user = db.query(models.User).filter(
+        models.User.phone_number == phone_check.phone_number,
+        models.User.user_id != current_user.user_id
+    ).first()
+
+    if db_user:
+        return {
+            "available": False,
+            "message": "이미 등록된 전화번호입니다.",
+            "is_same_number": False
+        }
+
+    return {
+        "available": True,
+        "message": "사용 가능한 전화번호입니다.",
+        "is_same_number": False
+    }
 
 @router.post("/find-userid")
 async def find_user_id(
