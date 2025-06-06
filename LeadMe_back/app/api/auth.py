@@ -307,6 +307,34 @@ async def check_user_id(
 
     return {"available": True, "message": "사용 가능한 사용자 ID입니다."}
 
+@router.post("/check-phone-number")
+async def check_phone_number(
+        phone_check: PhoneNumberCheck,
+        db: Session = Depends(get_db)
+):
+    """
+    전화번호 중복 확인
+
+    Args:
+        phone_check: 확인할 전화번호
+        db: 데이터베이스 세션
+
+    Returns:
+        Dict: 사용 가능 여부
+    """
+    db_user = db.query(models.User).filter(models.User.phone_number == phone_check.phone_number).first()
+
+    if db_user:
+        return {
+            "available": False, 
+            "message": "이미 등록된 전화번호입니다."
+        }
+
+    return {
+        "available": True, 
+        "message": "사용 가능한 전화번호입니다."
+    }
+
 
 @router.post("/find-userid")
 async def find_user_id(
