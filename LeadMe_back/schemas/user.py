@@ -23,7 +23,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     phone_number: Optional[str] = Field(None, min_length=10, max_length=15)
     age_group: Optional[str] = None
-    user_pw: Optional[str] = Field(None, min_length=8, max_length=128)
+    user_pw: Optional[str] = Field(None, alias="password")
 
     @validator('age_group')
     def validate_age_group(cls, v):
