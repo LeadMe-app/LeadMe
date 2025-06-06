@@ -101,7 +101,9 @@ const LoginScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.experienceButton}>
+      <TouchableOpacity 
+      style={styles.experienceButton}
+      onPress={()=> navigation.navigate('PreExperience')}>
         <Text style={styles.experienceButtonText}>사전 체험하기</Text>
       </TouchableOpacity>
     </View>
@@ -109,3 +111,4 @@ const LoginScreen = ({ navigation }) => {
 };
 
 export default LoginScreen;
+
