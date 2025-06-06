@@ -63,7 +63,20 @@ class UserIdCheck(BaseModel):
     """
     user_id: str = Field(..., min_length=3, max_length=50)
 
+class PhoneNumberCheck(BaseModel):
+    """
+    전화번호 중복 확인 요청 모델
+    """
+    phone_number: str = Field(..., min_length=10, max_length=15, description="확인할 전화번호")
 
+    @validator('phone_number')
+    def validate_phone_number(cls, v):
+        # 전화번호 형식 검증 (한국 휴대폰 번호 기준)
+        import re
+        phone_pattern = r'^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$'
+        if not re.match(phone_pattern, v.replace('-', '')):
+            raise ValueError('올바른 전화번호 형식이 아닙니다. (예: 01012345678)')
+        return v
 
 class FindUserId(BaseModel):
     """
