@@ -128,9 +128,12 @@ const EditProfileScreen = ({ navigation }) => {
         age_group: ageGroup,
       };
 
-      if (password) {
+      const isPasswordChanged = !!password;
+
+      if (isPasswordChanged) {
         updateData.password = password;
       }
+
 
       const response = await axiosInstance.put('/api/users/me', updateData, {
         headers: {
@@ -141,12 +144,27 @@ const EditProfileScreen = ({ navigation }) => {
       if (age_group) await AsyncStorage.setItem('age_group', age_group);
       if (username) await AsyncStorage.setItem('username', username);
       
+      if (isPasswordChanged) {
+      Alert.alert('수정 완료', '비밀번호가 변경되어 자동 로그아웃됩니다.', [
+        {
+          text: '확인',
+          onPress: async () => {
+            await AsyncStorage.removeItem('access_token');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'LoginScreen' }],
+            });
+          },
+        },
+      ]);
+    } else {
       Alert.alert('수정 완료', '회원정보가 성공적으로 수정되었습니다!');
-    } catch (error) {
-      console.error('회원정보 수정 실패:', error);
-      Alert.alert('오류', '회원정보 수정에 실패했습니다.');
     }
-  };
+  } catch (error) {
+    console.error('회원정보 수정 실패:', error);
+    Alert.alert('오류', '회원정보 수정에 실패했습니다.');
+  }
+};
 
   return (
     <View style={styles.container}>

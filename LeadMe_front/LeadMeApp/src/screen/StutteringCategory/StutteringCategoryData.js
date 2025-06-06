@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity} from 'react-native';
-import BackButton from '../../components/BackButton';
 import {styles} from './styles';
 import Logo from '../../components/Logo';
+import WordInfoModal from '../../components/WordInfoModal';
 
 const SelectWordModeScreen = ({ navigation }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  
   return (
     <View style={styles.container}>
       < Logo />
@@ -31,9 +33,25 @@ const SelectWordModeScreen = ({ navigation }) => {
       >
         <Text style={styles.fullWidthText}>즐겨찾기 단어</Text>
       </TouchableOpacity>
+
+    <View style={{ marginTop : '60' }}>
+      <TouchableOpacity
+            style={{
+            backgroundColor: '#F8D7A9',
+            paddingHorizontal: 15,
+            paddingVertical: 10,
+            borderRadius: 6,
+          }}
+            onPress={() => setModalVisible(true)}
+          >
+            <Text style={{ fontWeight: '500' }}>말더듬증 학습 방법</Text>
+          </TouchableOpacity>
+    </View>
+      
       <TouchableOpacity style={styles.navButton} onPress={() => navigation.navigate('HomeScreen')}>
           <Text style={styles.navButtonText}>뒤로 가기</Text>
       </TouchableOpacity>
+      <WordInfoModal visible={modalVisible} onClose={() => setModalVisible(false)} />
     </View>
     
   );

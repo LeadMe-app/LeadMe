@@ -17,8 +17,10 @@ import axiosInstance from '../../config/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Sound from 'react-native-sound';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import SentenceModal from '../../components/SentenceModal';
 
 const SentenceSpeech = ({ navigation }) => {
+  const [modalVisible, setModalVisible] = useState(false);
   const [isPracticing, setIsPracticing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [sentence, setSentence] = useState('');
@@ -29,7 +31,7 @@ const SentenceSpeech = ({ navigation }) => {
   const [ageGroup, setAgeGroup] = useState('20세 이상');
   const [isAnimating, setIsAnimating] = useState(false);
   const [isManualRecording, setIsManualRecording] = useState(false); // 
-
+  
   const intervalRef = useRef(null);
   const audioRecorderPlayer = useRef(null);
 
@@ -222,7 +224,7 @@ const SentenceSpeech = ({ navigation }) => {
         user_id: userId,
         speaker: 'Seoyeon',
         speed: '중간',
-        age_group: '13세~19세',
+        age_group: '13세~19세', // 연령대로 바꾸기
       });
 
       const response = await axiosInstance.post(
@@ -250,7 +252,7 @@ const SentenceSpeech = ({ navigation }) => {
         sound.play(() => {
           sound.release();
           ttsSoundRef.current = null;
-          setIsTTSPlaying(false);   // ✅ 재생 끝나면 상태 OFF
+          setIsTTSPlaying(false);  
         });
       });
     } catch (error) {
@@ -347,7 +349,22 @@ const SentenceSpeech = ({ navigation }) => {
           <Text style={styles.iconLabel}>재생</Text>
         </TouchableOpacity>
       </View>
-
+      <View style={{ marginTop : '60' }}>
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          style={{
+            backgroundColor: '#F8D7A9',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 6,
+          }}
+        >
+          <Text style={{ fontWeight: '500' }}>사용방법</Text>
+        </TouchableOpacity>
+      </View>
+      {/* 분리한 모달 컴포넌트 */}
+      <SentenceModal visible={modalVisible} onClose={() => setModalVisible(false)} />
+            
       <View style={styles.bottomButtons}>
         <TouchableOpacity
           style={styles.endButton}

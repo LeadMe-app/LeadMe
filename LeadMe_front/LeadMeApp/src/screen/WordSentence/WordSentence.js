@@ -8,7 +8,9 @@ import Stop from '../../icons/stop_icons.svg';
 import axiosInstance from '../../config/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Sound from 'react-native-sound';
+import DAFModal from '../../components/DAFModal';
 
+const {EarphoneModule} = NativeModules;
 const { DAFModule } = NativeModules;
 
 const WordSentence = ({ navigation, route }) => {
@@ -18,6 +20,7 @@ const WordSentence = ({ navigation, route }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDAFRunning, setIsDAFRunning] = useState(false);
   const [ttsSound, setTtsSound] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const fetchSentence = async () => {
     try {
@@ -47,26 +50,36 @@ const WordSentence = ({ navigation, route }) => {
     fetchSentence();
   }, [word]);
 
-  const toggleDAF = () => {
+  const toggleDAF = async () => {
     if (isProcessing) return;
 
     setIsProcessing(true);
 
     try {
-      if (isDAFRunning) {
-        DAFModule.stopDAF();
-        setIsDAFRunning(false);
-      } else {
-        DAFModule.startDAF();
-        setIsDAFRunning(true);
-      }
-    } catch (error) {
-      console.error('DAF 토글 오류:', error);
-      Alert.alert('오류', 'DAF 기능 실행 중 문제가 발생했습니다.');
-    } finally {
-      setIsProcessing(false);
+    // 이어폰 연결 여부 확인
+    const isConnected = await EarphoneModule.isAnyHeadphoneConnected();
+    if (!isConnected) {
+      Alert.alert(
+        '이어폰이 연결되지 않았습니다',
+        'DAF 기능을 사용하려면 유선 또는 블루투스 이어폰을 연결해주세요.'
+      );
+      return;
     }
-  };
+
+    if (isDAFRunning) {
+      DAFModule.stopDAF();
+      setIsDAFRunning(false);
+    } else {
+      DAFModule.startDAF();
+      setIsDAFRunning(true);
+    }
+  } catch (error) {
+    console.error('DAF 토글 오류:', error);
+    Alert.alert('오류', 'DAF 기능 실행 중 문제가 발생했습니다.');
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const TextToSpeech = async () => {
     if (isTtsPlaying) {
@@ -171,7 +184,20 @@ const WordSentence = ({ navigation, route }) => {
         <TouchableOpacity style={styles.otherButton} onPress={fetchSentence}>
           <Text style={styles.bottomButtonText}>다른 문장</Text>
         </TouchableOpacity>
+
       </View>
+      <View>
+        <TouchableOpacity style={{
+            backgroundColor: '#F8D7A9',
+            paddingHorizontal: 15,
+            paddingVertical: 10,
+            borderRadius: 6,
+            marginTop : 50,
+          }} onPress={() => setModalVisible(true)}>
+        <Text>학습 방법</Text>
+      </TouchableOpacity>
+      </View>
+      <DAFModal visible={modalVisible} onClose={() => setModalVisible(false)} />
     </View>
   );
 };
