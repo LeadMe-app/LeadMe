@@ -6,6 +6,7 @@ import os
 import random
 from datetime import datetime
 from sqlalchemy import func
+from fastapi import Query
 
 # 내부 모듈 임포트
 from database import get_db
@@ -187,7 +188,7 @@ def add_word_to_favorites(
 ''' 즐겨찾기 리스트 조회'''
 @router.get("/favorites/", response_model=List[WordFavoriteResponse])
 def read_favorites(
-        user_id: Optional[str] = None,
+        user_id: str = Query(..., description="사용자 ID는 필수입니다."),
         skip: int = 0,
         limit: int = 188,
         db: Session = Depends(get_db)
