@@ -143,17 +143,40 @@ async def analyze_audio_file(
         logger.info(f"SPM 계산 완료: {spm}")
 
         # 속도 카테고리 판단
-        speed_category = "정상"
-        if db_age_group_speed:
-            if spm <= db_age_group_speed.slow_rate:
+        age_group = current_user.age_group
+        logger.info(f"사용자 연령대: {age_group}")
+
+        if age_group == "5~12세":
+            if spm <= 110:
                 speed_category = "느림"
-            elif spm >= db_age_group_speed.fast_rate:
+            elif spm >= 161:
                 speed_category = "빠름"
+            else:
+                speed_category = "정상"
+        elif age_group == "13~19세":
+            if spm <= 140:
+                speed_category = "느림"
+            elif spm >= 251:
+                speed_category = "빠름"
+            else:
+                speed_category = "정상"
+        elif age_group == "20세 이상상":
+            if spm <= 180:
+                speed_category = "느림"
+            elif spm >= 281:
+                speed_category = "빠름"
+            else:
+                speed_category = "정상"
         else:
+            # 기본 fallback (정상으로 설정)
+            logger.warning(f"알 수 없는 연령대: {age_group}, 기본 속도 분류 사용")
             if spm < 180:
                 speed_category = "느림"
             elif spm > 300:
                 speed_category = "빠름"
+            else:
+                speed_category = "정상"
+
         logger.info(f"속도 카테고리 결정: {speed_category}")
 
         # DB 저장
