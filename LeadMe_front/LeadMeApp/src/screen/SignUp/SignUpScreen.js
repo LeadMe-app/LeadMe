@@ -21,10 +21,12 @@ const SignUpScreen = ({navigation}) => {
   const [confirmPw, setConfirmPw] = useState('');
   const [nickname, setNickname] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneChecked, setPhoneChecked] = useState(null); 
   const [age, setAge] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [errors, setErrors] = useState({
     userId: '',
+    phone: '', 
     password: '',
     general: '',
   });
@@ -57,6 +59,34 @@ const SignUpScreen = ({navigation}) => {
     }
   };
 
+  const checkPhoneDuplicate = async () => {
+  if (!phone.trim()) {
+    setErrors((prev) => ({ ...prev, phone: '전화번호를 입력해주세요.' }));
+    return;
+  }
+
+  try {
+    const response = await axiosInstance.post('/api/auth/check-phone-number', {
+      phone_number: phone.trim(),
+    });
+
+    if (response.data.available === false) {
+      setPhoneChecked(false);
+      setErrors((prev) => ({ ...prev, phone: '이미 등록된 전화번호입니다.' }));
+    } else {
+      setPhoneChecked(true);
+      setErrors((prev) => ({ ...prev, phone: '' }));
+    }
+  } catch (error) {
+    console.error('전화번호 중복 확인 에러:', error);
+    setPhoneChecked(false);
+    setErrors((prev) => ({
+      ...prev,
+      phone: '전화번호 중복 확인 중 오류가 발생했습니다.',
+    }));
+  }
+};
+
   {/*회원가입 시도 */}
   const handleSubmit = async () => {
     let valid = true;
@@ -69,6 +99,11 @@ const SignUpScreen = ({navigation}) => {
 
     if (!idChecked) {
       newErrors.userId = '아이디 중복 확인을 해주세요.';
+      valid = false;
+    }
+
+    if (!phoneChecked) {
+      newErrors.userId = '전회번호 중복 확인을 해주세요.';
       valid = false;
     }
 
@@ -193,22 +228,24 @@ const SignUpScreen = ({navigation}) => {
       />
 
       {/* 전화번호 */}
-      <TextInput
-        placeholder="전화번호"
-        value={phone}
-        onChangeText={(text) => {
-          const onlyNums = text.replace(/[^0-9]/g, '');
-          setPhone(onlyNums);
-          if (!onlyNums) {
-            setErrors((prev) => ({ ...prev, phone: '전화번호를 입력해주세요.' }));
-          } else {
-            setErrors((prev) => ({ ...prev, phone: '' }));
-          }
-        }}
-        keyboardType="phone-pad"
-        style={styles.input}
-      />
-      {errors.phone ? <Text style={styles.error}>{errors.phone}</Text> : null}
+      <View style={styles.row}>
+          <TextInput
+          placeholder="전화번호"
+          value={phone}
+          onChangeText={(text) => {
+            const onlyNums = text.replace(/[^0-9]/g, '');
+            setPhone(onlyNums);
+            setPhoneChecked(null);
+          }}
+          keyboardType="phone-pad"
+          style={styles.inputWithButton}
+        />
+        <TouchableOpacity style={styles.checkBtn} onPress={checkPhoneDuplicate}>
+          <Text style={styles.checkText}>중복확인</Text>
+        </TouchableOpacity>
+      </View>
+      {errors.phone ? <Text style={styles.error}>{errors.phone}</Text> 
+      : phoneChecked == true ? (<Text style={styles.success}> 사용 가능한 전화번호입니다. </Text>):null}
 
       {/* 연령대 선택 */}
       <View style={styles.dropdownWrapper}>

@@ -128,35 +128,33 @@ const EditProfileScreen = ({ navigation }) => {
         age_group: ageGroup,
       };
 
-      const isPasswordChanged = !!password;
-
-      if (isPasswordChanged) {
+      if (password && password.trim().length > 0) {
         updateData.password = password;
       }
 
+      console.log('보내는 데이터:', updateData);
 
       const response = await axiosInstance.put('/api/users/me', updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      const { age_group, username} = response.data;
+
+      const {age_group, username} = response.data;
       if (age_group) await AsyncStorage.setItem('age_group', age_group);
       if (username) await AsyncStorage.setItem('username', username);
       
-      if (isPasswordChanged) {
-      Alert.alert('수정 완료', '비밀번호가 변경되어 자동 로그아웃됩니다.', [
-        {
-          text: '확인',
-          onPress: async () => {
-            await AsyncStorage.removeItem('access_token');
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'LoginScreen' }],
-            });
-          },
-        },
-      ]);
+      if (password && password.trim().length > 0)  {
+        Alert.alert('수정 완료', '비밀번호가 변경되어 자동 로그아웃됩니다.');
+        console.log('updateData:', updateData);
+
+        setTimeout(async () => {
+        await AsyncStorage.removeItem('access_token');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      }, 500); 
     } else {
       Alert.alert('수정 완료', '회원정보가 성공적으로 수정되었습니다!');
     }
