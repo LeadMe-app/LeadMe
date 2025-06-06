@@ -22,7 +22,7 @@ from app.core.security import (
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 from schemas.auth import Token, TokenData, UserLogin, \
-    UserCreate, UserIdCheck, FindUserId, UserUpdate, ResetPasswordOnlyRequest, VerifyResetUserRequest
+    UserCreate, UserIdCheck, PhoneNumberCheck, FindUserId, UserUpdate, ResetPasswordOnlyRequest, VerifyResetUserRequest
 
 router = APIRouter()
 
