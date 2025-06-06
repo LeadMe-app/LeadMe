@@ -1,3 +1,5 @@
+// src/screen/PreExperience/PreExperienceScreen.js
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -7,165 +9,221 @@ import {
   Platform,
   BackHandler,
 } from 'react-native';
+
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import Sound from 'react-native-sound';
 import axiosInstance from '../../config/axiosInstance';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import Logo from '../../components/Logo';
 import Microphone from '../../icons/microphone_icons.svg';
-import Stop from '../../icons/stop_icons.svg';
+import StopIcon from '../../icons/stop_icons.svg';
+import SpeakerIcon from '../../icons/Speaker_icons.svg';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const PreExperienceScreen = ({ navigation }) => {
+  // ───────────────────────────────────────────────────────────────
+  // React Hooks는 컴포넌트 최상위에서만 호출합니다
   const [isRecording, setIsRecording] = useState(false);
+  const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [speechSpeed, setSpeechSpeed] = useState(null);
   const [feedback, setFeedback] = useState('');
-  const [recordedFilePath, setRecordedFilePath] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
+  // “평균 SPM 보기” 토글 상태
+  const [showAverageSpm, setShowAverageSpm] = useState(false);
+  // ───────────────────────────────────────────────────────────────
+
+  // (선택) 안드로이드 뒤로가기 버튼 무시
   useEffect(() => {
-    const onBackPress = () => {
-      return true;
-    };
-    const subscription = BackHandler.addEventListener(
-      'hardwareBackPress',
-      onBackPress
-    );
+    const onBackPress = () => true;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
   }, []);
 
-  // 2) 녹음 시작 핸들러
-  const handleRecordPress = async () => {
+  // 1) 녹음 시작
+  const handleRecordStart = async () => {
     try {
-      // 녹음을 다시 시작하기 전, 이전 결과 초기화
+      // 기존 결과 초기화
       setFeedback('');
       setSpeechSpeed(null);
-
-      // 상태를 recording 상태로 바꿔 UI 토글
       setIsRecording(true);
 
-      // AudioRecorderPlayer를 이용해 실제 녹음 시작
+      // 실제 녹음 시작
       const resultPath = await audioRecorderPlayer.startRecorder();
       setRecordedFilePath(resultPath);
-      console.log('🌟 녹음 시작:', resultPath);
+      console.log('사전 체험 녹음 시작:', resultPath);
     } catch (error) {
-      console.error('❌ 녹음 시작 실패:', error);
+      console.error('사전 체험 녹음 시작 실패:', error);
       setIsRecording(false);
     }
   };
 
-  // 3) 녹음 종료 핸들러
-  const handleStopPress = async () => {
+  // 2) 녹음 정지
+  const handleRecordStop = async () => {
     try {
-      // 녹음 정지
       const resultPath = await audioRecorderPlayer.stopRecorder();
       setIsRecording(false);
       setRecordedFilePath(resultPath);
-      console.log('🌟 녹음 종료:', resultPath);
+      console.log('사전 체험 녹음 종료:', resultPath);
 
-      // 녹음이 끝난 뒤, 서버로 전송 및 분석 요청
-      await sendRecordingToServer(resultPath);
+      // 서버 업로드 및 분석 요청
+      await uploadAndAnalyze(resultPath);
     } catch (error) {
-      console.error('❌ 녹음 종료 실패:', error);
+      console.error('사전 체험 녹음 종료 실패:', error);
+      setIsRecording(false);
     }
   };
 
-  // 4) 서버로 녹음 파일 전달하고 결과 받아오기
-  const sendRecordingToServer = async (filePath) => {
+  // 3) 서버 업로드 및 발화속도 분석 요청 (로그인 없이 호출 가능한 엔드포인트 사용)
+  const uploadAndAnalyze = async (filePath) => {
     try {
-      const uri =
-        Platform.OS === 'android' ? `file://${filePath}` : filePath;
+      setIsUploading(true);
+
+      // Android vs iOS 경로 처리
+      const uri = Platform.OS === 'android' ? `file://${filePath}` : filePath;
       const mimeType = 'audio/m4a';
       const fileName = 'pre_experience_recording.m4a';
 
       const formData = new FormData();
       formData.append('file', {
-        uri: uri,
+        uri,
         type: mimeType,
         name: fileName,
       });
 
-      const token = await AsyncStorage.getItem('access_token');
-      if (!token) {
-        console.warn('⚠️ 토큰이 없습니다. 로그인 상태를 확인하세요.');
-        return;
-      }
-
-      // multipart 요청
       const response = await axiosInstance.post(
-        '/api/speed/analyze-audio-file/',
+        '/api/speed/analyze-audio/', // 로그인 필요 없는 경로로 변경
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      console.log('✅ 서버 응답:', response.data);
+      console.log('사전 체험 서버 응답:', response.data);
+
+      // response.data에 spm, feedback, speed_category 등이 있다고 가정
       setSpeechSpeed(response.data.spm);
       setFeedback(
-        response.data.feedback ||
-          `발화 속도 등급: ${response.data.speed_category}`
+        response.data.feedback || `발화 속도 등급 ${response.data.speed_category}`
       );
     } catch (error) {
-      console.error('❌ 서버 업로드/분석 실패:', error);
-      if (error.response) {
-        console.log('서버 응답 코드:', error.response.status);
-        console.log('서버 응답 메시지:', error.response.data);
-      } else if (error.request) {
-        console.log('요청은 보냈으나 응답 없음:', error.request);
-      } else {
-        console.log('그 외 오류:', error.message);
-      }
+      console.error('사전 체험 서버 업로드/분석 실패:', error);
+      // 추가적인 Alert이나 안내 없이 콘솔만 출력
+    } finally {
+      setIsUploading(false);
     }
   };
 
+  // 4) 녹음 파일 재생
+  const handlePlayPress = () => {
+    if (!recordedFilePath) return;
+
+    // Android에서는 file://을 제거해야 Sound가 재생 가능
+    const path =
+      Platform.OS === 'android'
+        ? recordedFilePath.replace('file://', '')
+        : recordedFilePath;
+
+    console.log('재생할 경로:', path);
+
+    const sound = new Sound(path, '', (error) => {
+      if (error) {
+        console.error('사전 체험 재생 초기화 실패:', error);
+        return;
+      }
+      sound.play((success) => {
+        if (success) {
+          console.log('사전 체험 재생 완료');
+        } else {
+          console.log('사전 체험 재생 중 오류');
+        }
+        sound.release();
+      });
+    });
+  };
+
+  // 5) 체험 종료
   const handleEndExperience = () => {
     navigation.goBack();
   };
 
+  // 6) 평균 SPM 보기 토글
+  const toggleAverageSpm = () => {
+    setShowAverageSpm(prev => !prev);
+  };
 
   return (
     <View style={styles.container}>
       <Logo />
 
-      {/* 녹음 버튼 영역 */}
-      <View style={styles.iconRow}>
+      {/* 가로(2열) 버튼 레이아웃 */}
+      <View style={styles.buttonRow}>
+        {/* 왼쪽: 녹음 시작·정지 버튼 */}
         {!isRecording ? (
           <TouchableOpacity
-            onPress={handleRecordPress}
-            style={styles.buttonArea}
+            style={[styles.buttonWrapper, styles.leftButton]}
+            onPress={handleRecordStart}
           >
-            <Microphone width={100} height={100} />
-            <Text style={styles.buttonText}>녹음 시작</Text>
+            <Microphone width={70} height={70} />
+            <Text style={styles.buttonText}>
+              {isUploading ? '분석 중...' : '녹음 시작'}
+            </Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            onPress={handleStopPress}
-            style={styles.buttonArea}
+            style={[styles.buttonWrapper, styles.leftButton]}
+            onPress={handleRecordStop}
           >
-            <Stop width={100} height={100} />
+            <StopIcon width={70} height={70} />
             <Text style={styles.buttonText}>녹음 정지</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* 오른쪽: 재생 버튼 (녹음 종료 후에만 표시) */}
+        {recordedFilePath && !isRecording && (
+          <TouchableOpacity
+            style={[styles.buttonWrapper, styles.rightButton]}
+            onPress={handlePlayPress}
+          >
+            <SpeakerIcon width={70} height={70} />
+            <Text style={styles.buttonText}>재생</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* 발화 속도 결과 표시 */}
+      {/* 발화 속도 & 피드백 표시 영역 */}
       <View style={styles.speedContainer}>
         <Text style={styles.speedLabel}>현재 나의 발화속도는?</Text>
         <View style={styles.speedBox}>
           {speechSpeed !== null ? (
-            <Text style={styles.speedText}>{`${speechSpeed} WPM`}</Text>
+            <Text style={styles.speedText}>{`${speechSpeed} SPM`}</Text>
           ) : (
             <Text style={styles.speedPlaceholder}>-</Text>
           )}
         </View>
       </View>
 
-      {/* 서버에서 받은 피드백 텍스트 */}
       {feedback !== '' && (
         <Text style={styles.feedbackText}>{feedback}</Text>
+      )}
+
+      {/* 평균 SPM 보기 아이콘 */}
+      <TouchableOpacity
+        style={styles.infoIconWrapper}
+        onPress={toggleAverageSpm}
+      >
+        <Text style={styles.infoIconText}>ℹ️</Text>
+      </TouchableOpacity>
+
+      {showAverageSpm && (
+        <View style={styles.avgSpmBox}>
+          <Text style={styles.avgSpmText}>5~12세 평균 SPM: 120</Text>
+          <Text style={styles.avgSPMText}>13~19세 평균 SPM: 250</Text>
+          <Text style={styles.avgSPMText}>20세 이상 평균 SPM: 350</Text>
+        </View>
       )}
 
       {/* 체험 종료 버튼 */}
@@ -189,23 +247,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
   },
-  iconRow: {
+  // 버튼을 가로로 배치
+  buttonRow: {
+    flexDirection: 'row',            // 가로 정렬
     marginTop: 40,
+    justifyContent: 'space-evenly',  // 버튼 사이 간격 균등 배치
     alignItems: 'center',
-    justifyContent: 'center',
+    width: '80%',                    // 부모 너비의 80% 차지
   },
-  buttonArea: {
+  buttonWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
   },
   buttonText: {
-    marginTop: 8,
-    fontSize: 16,
+    marginTop: 6,
+    fontSize: 14,
     color: '#333',
   },
+
   speedContainer: {
     width: '80%',
-    marginTop: 50,
+    marginTop: 30,
     alignItems: 'center',
   },
   speedLabel: {
@@ -244,6 +308,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
   },
+
+  // 평균 SPM 보기 아이콘 위치
+  infoIconWrapper: {
+    marginTop: 20,
+    padding: 8,
+  },
+  infoIconText: {
+    fontSize: 24,
+    color: '#333',
+  },
+
+  // 평균 SPM 텍스트 박스
+  avgSpmBox: {
+    marginTop: 8,
+    backgroundColor: '#FFFDF8',
+    borderWidth: 1,
+    borderColor: '#FFDDAA',
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    width: '70%',
+    alignItems: 'center',
+  },
+  avgSpmText: {
+    fontSize: 16,
+    color: '#333',
+  },
+
   endButton: {
     position: 'absolute',
     bottom: 40,
