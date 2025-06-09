@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  TouchableOpacity,  Alert, BackHandler
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import axiosInstance from '../../config/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // 토큰 저장
 import qs from 'qs'; // form
@@ -27,7 +28,6 @@ const LoginScreen = ({ navigation }) => {
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   // 타이머를 사용해 남은 잠금 시간을 업데이트.
-
   useEffect(() => {
     let timer;
     if (isLocked){
@@ -39,7 +39,7 @@ const LoginScreen = ({ navigation }) => {
           setIsLocked(false);
           setFailedAttempts(0);
           setRemainingSeconds(0);
-
+          setErrors(prev => ({ ...prev, general: '' }));
         }else {
           setRemainingSeconds(diff);
         }
@@ -49,6 +49,23 @@ const LoginScreen = ({ navigation }) => {
       if (timer) clearInterval(timer);
     }
   }, [isLocked, lockEndTime]);
+
+   // 뒤로가기 버튼 핸들링
+    useFocusEffect(
+      useCallback(() => {
+        const onBackPress = () => {
+          Alert.alert('앱 종료', '앱을 종료하시겠습니까?', [
+            { text: '취소', style: 'cancel' },
+            { text: '종료', onPress: () => BackHandler.exitApp() },
+          ]);
+          return true;
+        };
+  
+        const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+  
+        return () => subscription.remove(); // ✅ 최신 방식
+      }, [])
+    );
 
    {/*로그인 시도*/}
    const handleLogin = async () => {
@@ -93,7 +110,7 @@ const LoginScreen = ({ navigation }) => {
 
       // 로그인 성공 시 실패 카운트 초기화.
       setFailedAttempts(0);
-      setErrors({general: ''});
+      setErrors({ userId: '', password: '', general: '...' });
       navigation.navigate('HomeScreen');
     } catch (err) {
       console.error('로그인 실패:', err.response?.data || err);
@@ -104,7 +121,7 @@ const LoginScreen = ({ navigation }) => {
 
       // 5회 실패 시 30초 잠금.
       if (newCount >= 5){
-        const lockUntil = Date.now() + 3000;
+        const lockUntil = Date.now() + 30000;
         setIsLocked(true);
         setLockEndTime(lockUntil);
         setErrors({general: '로그인 5회 실패 30초간 잠금됩니다.'});
@@ -138,8 +155,18 @@ const LoginScreen = ({ navigation }) => {
       {/* 에러 메시지 */}
       {errors.general ? <Text style={styles.errorText}>{errors.general}</Text> : null}
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>로그인</Text>
+      <TouchableOpacity
+        style={[
+          styles.loginButton,
+          isLocked && { backgroundColor: '#ccc' } // 비활성화 시 색상 변경
+        ]}
+        onPress={handleLogin}
+        disabled={isLocked} // 버튼 비활성화
+        activeOpacity={isLocked ? 1 : 0.7} 
+      >
+        <Text style={[styles.loginButtonText, isLocked && { color: '#666' } ]}>
+          {isLocked ? `잠김(${remainingSeconds}s)` : '로그인'}
+        </Text>
       </TouchableOpacity>
 
       <View style={styles.linkContainer}>
