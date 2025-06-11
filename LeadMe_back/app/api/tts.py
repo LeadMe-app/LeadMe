@@ -11,6 +11,9 @@ from database import get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
+import models
+from app.api.auth import get_current_user
+
 router = APIRouter()
 polly_service = AmazonPollyService()
 
@@ -69,6 +72,7 @@ async def text_to_speech(
         speed: str = Query("중간", description="읽기 속도 ('천천히', '중간', '빠르게')"),
         age_group: str = Query("20세 이상", description="사용자 연령대 ('5~12세', '13~19세', '20세 이상')"),
         request: Request = None,
+        current_user: models.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
     """

@@ -11,6 +11,7 @@ from fastapi import Query
 # 내부 모듈 임포트
 from database import get_db
 import models
+from app.api.auth import get_current_user
 from schemas.word import WordListCreate, WordListResponse, WordFavoriteCreate, WordFavoriteResponse
 
 router = APIRouter()
@@ -20,7 +21,8 @@ router = APIRouter()
 def read_words(
         user_id: Optional[str] = None,  # ← user_id 쿼리 파라미터로 받음
         skip: int = 0,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
     """모든 단어 목록을 반환하며, user_id가 주어지면 즐겨찾기 여부도 포함합니다."""
     words = db.query(models.WordList).offset(skip).all()
@@ -49,7 +51,7 @@ def read_words(
 
 '''랜덤 단어 제공 (즐겨찾기 여부 포함)'''
 @router.get("/random", response_model=WordListResponse)
-def get_random_word(user_id: str, db: Session = Depends(get_db)):
+def get_random_word(user_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """무작위로 단어 하나를 반환하고, 즐겨찾기 상태도 함께 제공합니다."""
     
     random_word = db.query(models.WordList).order_by(func.random()).first()
@@ -75,7 +77,8 @@ def get_random_word(user_id: str, db: Session = Depends(get_db)):
 def read_word(
         word_id: int,
         user_id: Optional[str] = None,  # ← user_id 쿼리로 받음
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
     db_word = db.query(models.WordList).filter(models.WordList.word_id == word_id).first()
     if db_word is None:
@@ -141,7 +144,8 @@ async def upload_word_image(
 @router.post("/favorites/", response_model=WordFavoriteResponse, status_code=status.HTTP_201_CREATED)
 def add_word_to_favorites(
         favorite: WordFavoriteCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
     """단어를 사용자의 즐겨찾기에 추가합니다."""
     # 사용자 존재 여부 확인
@@ -191,7 +195,8 @@ def read_favorites(
         user_id: str = Query(..., description="사용자 ID는 필수입니다."),
         skip: int = 0,
         limit: int = 188,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
     """사용자의 즐겨찾기 단어 목록을 반환합니다."""
     query = db.query(models.WordFavorites)
@@ -208,7 +213,8 @@ def read_favorites(
 def delete_favorite(
         user_id: str,  # 사용자 ID
         word_id: int,  # 단어 ID
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
     """사용자의 즐겨찾기에서 단어를 제거합니다."""
     # 사용자와 단어에 대한 즐겨찾기 조회
