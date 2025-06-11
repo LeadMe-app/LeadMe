@@ -52,4 +52,33 @@ export const styles = StyleSheet.create({
     marginLeft: 5,
     fontSize: 12,
   },
+   row: {
+    flexDirection: 'row',
+    width: '100%',
+    marginVertical: 6,
+  },
+  inputWithButton: {
+    flex: 1,
+    backgroundColor: COLORS.inputBackground,
+    padding: 12,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+  },
+  checkBtn: {
+    backgroundColor: COLORS.checkButton,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  checkText: {
+    color: COLORS.headingText,
+    fontWeight: 'bold',
+  },
+  success: {
+    color: COLORS.successText,
+    fontSize: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
 });

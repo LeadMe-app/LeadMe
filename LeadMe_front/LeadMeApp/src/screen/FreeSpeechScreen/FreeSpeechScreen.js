@@ -18,7 +18,8 @@ const FreeSpeechScreen = ({ navigation }) => {
   const [speechSpeed, setSpeechSpeed] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [recordedFilePath, setRecordedFilePath] = useState(null);
-
+  const [showAverageSpm, setShowAverageSpm] = useState(false);
+  
   const handleRecordPress = async () => {
     setIsRecording(true);
     const result = await audioRecorderPlayer.startRecorder();
@@ -104,6 +105,10 @@ const FreeSpeechScreen = ({ navigation }) => {
     }
   };
 
+  const toggleAverageSpm = () => {
+    setShowAverageSpm(prev => !prev);
+  };
+  
   return (
     <View style={styles.container}>
       <Logo />
@@ -139,6 +144,22 @@ const FreeSpeechScreen = ({ navigation }) => {
       </View>
 
       {feedback !== '' && <Text style={styles.feedbackText}>{feedback}</Text>}
+
+    {/* 평균 SPM 보기 아이콘 */}
+      <TouchableOpacity
+        style={styles.infoIconWrapper}
+        onPress={toggleAverageSpm}
+      >
+        <Text style={styles.infoIconText}>ℹ️</Text>
+      </TouchableOpacity>
+
+      {showAverageSpm && (
+        <View style={styles.avgSpmBox}>
+          <Text style={styles.avgSpmText}>5~12세 평균 SPM: 111 ~ 160</Text>
+          <Text style={styles.avgSPMText}>13~19세 평균 SPM: 141 ~ 250</Text>
+          <Text style={styles.avgSPMText}>20세 이상 평균 SPM: 181 ~ 280</Text>
+        </View>
+      )}
 
       <BackButton />
     </View>

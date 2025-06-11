@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
+import { BackHandler } from 'react-native';
 import SignUpScreen from './src/screen/SignUp/SignUpScreen';
 import LoginScreen from './src/screen/Login/LoginScreen';
 import FindIDScreen from './src/screen/FindID/FindIDScreen';
@@ -20,10 +20,24 @@ import WordSentence from './src/screen/WordSentence/WordSentence';
 import {FavoriteProvider, FavoriteWordsScreen} from './src/screen/FavoriteWordsScreen/FavoriteWordsScreen';
 import RandomWordScreen from './src/screen/RandomWordScreen/RandomWordScreen';
 import SpeedListScreen from './src/screen/SpeedList/SpeedListScreen';
+import PreExperience from './src/screen/PreExperience/PreExperienceScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  useEffect(() => {
+    const onBackPress = () => {
+      return true;
+    };
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onBackPress
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
   return (
   <FavoriteProvider>
     <NavigationContainer>
@@ -45,7 +59,8 @@ export default function App() {
         <Stack.Screen name="WordSentence" component={WordSentence} options={{headerShown: false}} />
         <Stack.Screen name="FavoriteWordsScreen" component={FavoriteWordsScreen} options={{headerShown: false}} />
         <Stack.Screen name="RandomWordScreen" component={RandomWordScreen} options={{headerShown: false}} />
-        <Stack.Screen name="SpeedListScreen" component={SpeedListScreen} options={{headerShown: false}} />        
+        <Stack.Screen name="SpeedListScreen" component={SpeedListScreen} options={{headerShown: false}} />
+        <Stack.Screen name="PreExperience" component={PreExperience} options={{headerShown: false}} />        
       </Stack.Navigator>
     </NavigationContainer>
   </FavoriteProvider>
