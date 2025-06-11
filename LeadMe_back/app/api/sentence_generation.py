@@ -5,8 +5,6 @@ from pydantic import BaseModel
 
 from database import get_db
 from models import User
-import models
-from app.api.auth import get_current_user
 from services.age_based_speech_trainer import get_sentence_for_age_group, get_sentence_with_retry_if_needed
 from services.word_based_speech_trainer import get_sentence_for_word_and_age
 from services.amazon_polly import AmazonPollyService
@@ -24,7 +22,7 @@ class SentenceRequest(BaseModel):
     user_id: str
 
 @router.post("/generate", tags=["sentence"])
-async def generate_sentence(data: SentenceRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def generate_sentence(data: SentenceRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.user_id == data.user_id).first()
     if not user:
         return {"error": "사용자를 찾을 수 없습니다."}
@@ -43,7 +41,7 @@ class WordSentenceRequest(BaseModel):
     word: str
 
 @router.post("/generate/word", tags=["sentence"])
-async def generate_sentence_with_word(data: WordSentenceRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def generate_sentence_with_word(data: WordSentenceRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.user_id == data.user_id).first()
     if not user:
         return {"error": "사용자를 찾을 수 없습니다."}
@@ -61,7 +59,7 @@ async def generate_sentence_with_word(data: WordSentenceRequest, db: Session = D
 
 ''' 말더듬증 tts 코드'''
 @router.post("/generate/word/tts", tags=["sentence"])
-async def generate_word_sentence_tts(data: WordSentenceRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def generate_word_sentence_tts(data: WordSentenceRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.user_id == data.user_id).first()
     if not user:
         return {"error": "사용자를 찾을 수 없습니다."}
