@@ -27,6 +27,13 @@ class User(Base):
     word_favorites = relationship("WordFavorites", back_populates="user")
     speed_analyses = relationship("SpeedAnalysis", back_populates="user")
     user_sessions = relationship("UserSession", back_populates="user")
+    age_group_rate = relationship(
+        "AgeGroupSpeechRate",
+        primaryjoin="User.age_group == foreign(AgeGroupSpeechRate.age_group)",
+        viewonly=True,
+        uselist=False
+    )
+
 
 # 2. Word_List (단어 리스트 테이블)
 class WordList(Base):
@@ -66,8 +73,21 @@ class SpeedAnalysis(Base):
     # 관계 설정
     user = relationship("User", back_populates="speed_analyses")
 
+# 5. Age_Group_Speech_Rate (연령대 별로 발화 속도 정의 테이블)
+class AgeGroupSpeechRate(Base):
+    __tablename__ = "age_group_speech_rate"
 
-# 5. user_sessions (로그인 세션 테이블)
+    age_group = Column(String, primary_key=True)
+    slow_rate = Column(Integer)
+    normal_rate = Column(Integer)
+    fast_rate = Column(Integer)
+
+    # CHECK 제약 조건 추가
+    __table_args__ = (
+        CheckConstraint("age_group IN ('5~12세', '13~19세', '20세 이상')", name="check_age_group_speech_rate"),
+    )
+
+# 6. user_sessions (로그인 세션 테이블)
 class UserSession(Base):
     __tablename__ = "user_sessions" 
 
