@@ -146,12 +146,12 @@ async def get_current_user(
     if user is None:
         raise credentials_exception
     
-     # token으로 세션 조회 (user_id 대신 token으로 직접 조회)
-    session = db.query(UserSession).filter(UserSession.token == token).first()
-    if not session:
+    # ✅ UserSession에서 저장된 토큰 확인
+    session = db.query(UserSession).filter(UserSession.user_id == user.user_id).first()
+    if not session or session.token != token:
         print("🚫 유효하지 않은 세션 또는 토큰")
         raise credentials_exception
-    
+
     return user
 
 def get_user_id_from_token(token: str) -> str:
