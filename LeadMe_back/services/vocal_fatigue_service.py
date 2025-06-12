@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 하이퍼볼릭 모델 기반 음성 피로 분석 서비스
-기존 hyper.py에서 services로 이동
 """
 
 import os
@@ -19,8 +18,6 @@ import io
 
 # 기존 LeadMe 모듈 임포트
 from services.openai_stt import OpenAISTTService
-from database import get_db, SessionLocal
-import models
 
 warnings.filterwarnings('ignore')
 
@@ -151,10 +148,7 @@ class VocalFatigueAnalysisService:
             if model_result:
                 final_result.update(model_result)
 
-            # 7. 데이터베이스 저장 (선택사항)
-            if save_to_db and user_id:
-                self.save_analysis_to_database(user_id, final_result)
-
+            # 7. 최종 결과 반환
             logger.info("=== 분석 완료 ===")
             logger.info(f"전기 SPM: {early_spm}, 중기 SPM: {middle_spm}, 말기 SPM: {late_spm}")
             logger.info(f"전체 SPM: {overall_spm}")
@@ -387,18 +381,4 @@ class VocalFatigueAnalysisService:
 
         except Exception as e:
             logger.error(f"그래프 생성 실패: {e}")
-            return {"status": "error", "error": str(e)}
-
-    def save_analysis_to_database(self, user_id: str, analysis_result: Dict):
-        """분석 결과를 데이터베이스에 저장"""
-        try:
-            db = SessionLocal()
-
-            # VocalFatigue 테이블이 있다면 저장, 없다면 로그만 기록
-            # 실제 구현 시 해당 모델을 생성해야 함
-            logger.info(f"사용자 {user_id}의 음성 피로 분석 결과 저장 완료")
-
-            db.close()
-
-        except Exception as e:
-            logger.error(f"데이터베이스 저장 실패: {e}")
+            return {"status": "error", "error": str(e)} 
