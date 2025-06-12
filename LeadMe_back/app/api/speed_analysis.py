@@ -19,7 +19,7 @@ from schemas.speech import SpeedAnalysisCreate, SpeedAnalysisResponse
 from schemas.user import UserSettingsCreate, UserSettingsResponse
 from app.api.auth import get_current_user
 from services.openai_stt import OpenAISTTService
-#from services.naver_clova import NaverClovaService
+from services.vocal_fatigue_service import VocalFatigueAnalysisService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -34,6 +34,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # openai whisper 서비스 초기화
 OpenAI_Whisper = OpenAISTTService()
+vocal_fatigue_service = VocalFatigueAnalysisService()
 
 def convert_m4a_to_wav(input_path: str, output_path: str):
     command = [
@@ -349,6 +350,105 @@ async def analyze_uploaded_audio(
                 logger.info("변환된 임시 파일 삭제 완료")
         except Exception as cleanup_error:
             logger.warning(f"임시 파일 정리 중 오류: {cleanup_error}")
+
+
+@router.post("/analyze-vocal-fatigue/", status_code=status.HTTP_201_CREATED)
+async def analyze_vocal_fatigue(
+        file: UploadFile = File(...),
+        current_user: models.User = Depends(get_current_user)
+):
+    """
+    음성 피로도 분석 API (12구간 하이퍼볼릭 모델)
+    최소 1분 이상의 음성 파일이 필요합니다.
+    그래프 이미지 파일을 생성하고 파일 경로를 반환합니다.
+    """
+    logger.info(f"[START] analyze_vocal_fatigue called - filename: {file.filename}, user_id: {current_user.user_id}")
+
+    # 파일 확장자 검증
+    if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
+        logger.warning(f"지원되지 않는 파일 형식: {file.filename}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="지원되지 않는 파일 형식입니다. .wav, .mp3, .m4a, .ogg 형식만 허용됩니다."
+        )
+
+    try:
+        # 파일 데이터 읽기
+        audio_data = await file.read()
+        user_id = current_user.user_id
+
+        logger.info(f"음성 파일 크기: {len(audio_data)} bytes")
+
+        # 음성 피로도 분석 실행 (DB 저장 안함)
+        logger.info("음성 피로도 분석 시작")
+        analysis_result = vocal_fatigue_service.analyze_audio_file_12segments(
+            audio_data=audio_data,
+            user_id=None,  # DB 저장하지 않음
+            save_to_db=False
+        )
+
+        if analysis_result["status"] != "success":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=analysis_result.get("error", "분석 중 오류가 발생했습니다.")
+            )
+
+        # 그래프 이미지 파일 저장
+        if analysis_result.get("graph_available"):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            graph_filename = f"vocal_fatigue_analysis_{user_id}_{timestamp}.png"
+
+            # static/graphs 디렉토리 생성
+            graph_dir = "static/graphs"
+            os.makedirs(graph_dir, exist_ok=True)
+            graph_path = os.path.join(graph_dir, graph_filename)
+
+            # Base64 이미지를 파일로 저장
+            import base64
+            if analysis_result.get("graph_image"):
+                image_data = base64.b64decode(analysis_result["graph_image"])
+                with open(graph_path, "wb") as f:
+                    f.write(image_data)
+
+                # 웹에서 접근 가능한 URL 생성
+                graph_url = f"/static/graphs/{graph_filename}"
+
+                logger.info(f"그래프 이미지 저장 완료: {graph_path}")
+            else:
+                graph_path = None
+                graph_url = None
+        else:
+            graph_path = None
+            graph_url = None
+
+        # 반환 데이터 구성
+        result = {
+            "status": "success",
+            "filename": file.filename,
+            "spm_analysis": analysis_result.get("spm_analysis"),
+            "audio_info": analysis_result.get("audio_info"),
+            "graph_path": graph_path,
+            "graph_url": graph_url,
+            "graph_available": analysis_result.get("graph_available", False)
+        }
+
+        # 모델 결과가 있으면 추가
+        if "parameters" in analysis_result:
+            result["model_parameters"] = analysis_result["parameters"]
+        if "model_quality" in analysis_result:
+            result["model_quality"] = analysis_result["model_quality"]
+
+        logger.info("[END] analyze_vocal_fatigue 성공적으로 종료")
+        return JSONResponse(status_code=201, content=result)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[ERROR] 음성 피로도 분석 중 예외 발생: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"음성 피로도 분석 중 오류가 발생했습니다: {str(e)}"
+        )
 
 
 @router.get("/analysis/", response_model=List[SpeedAnalysisResponse])
