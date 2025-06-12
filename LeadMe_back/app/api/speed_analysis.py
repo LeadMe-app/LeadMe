@@ -376,7 +376,7 @@ async def analyze_vocal_fatigue(
         # 파일 데이터 읽기
         audio_data = await file.read()
         user_id = current_user.user_id
-
+        
         logger.info(f"음성 파일 크기: {len(audio_data)} bytes")
 
         # 음성 피로도 분석 실행 (DB 저장 안함)
@@ -395,24 +395,34 @@ async def analyze_vocal_fatigue(
 
         # 그래프 이미지 파일 저장
         if analysis_result.get("graph_available"):
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            graph_filename = f"vocal_fatigue_analysis_{user_id}_{timestamp}.png"
-
             # static/graphs 디렉토리 생성
             graph_dir = "static/graphs"
             os.makedirs(graph_dir, exist_ok=True)
+            
+            # 해당 사용자의 기존 그래프 파일들 삭제
+            import glob
+            existing_files = glob.glob(os.path.join(graph_dir, f"vocal_fatigue_analysis_{user_id}_*.png"))
+            for old_file in existing_files:
+                try:
+                    os.remove(old_file)
+                    logger.info(f"기존 그래프 파일 삭제: {old_file}")
+                except Exception as e:
+                    logger.warning(f"기존 파일 삭제 실패: {old_file}, 오류: {e}")
+            
+            # 고정된 파일명으로 새 그래프 파일 생성
+            graph_filename = f"vocal_fatigue_analysis_{user_id}.png"
             graph_path = os.path.join(graph_dir, graph_filename)
-
+            
             # Base64 이미지를 파일로 저장
             import base64
             if analysis_result.get("graph_image"):
                 image_data = base64.b64decode(analysis_result["graph_image"])
                 with open(graph_path, "wb") as f:
                     f.write(image_data)
-
+                
                 # 웹에서 접근 가능한 URL 생성
                 graph_url = f"/static/graphs/{graph_filename}"
-
+                
                 logger.info(f"그래프 이미지 저장 완료: {graph_path}")
             else:
                 graph_path = None
@@ -431,13 +441,13 @@ async def analyze_vocal_fatigue(
             "graph_url": graph_url,
             "graph_available": analysis_result.get("graph_available", False)
         }
-
+        
         # 모델 결과가 있으면 추가
         if "parameters" in analysis_result:
             result["model_parameters"] = analysis_result["parameters"]
         if "model_quality" in analysis_result:
             result["model_quality"] = analysis_result["model_quality"]
-
+        
         logger.info("[END] analyze_vocal_fatigue 성공적으로 종료")
         return JSONResponse(status_code=201, content=result)
 
