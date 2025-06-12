@@ -159,7 +159,10 @@ const SignUpScreen = ({ navigation }) => {
                 setIdChecked(null);
                 setErrors((prev) => ({
                   ...prev,
-                  userId: text.trim() ? '' : '아이디를 입력해주세요.',
+                  userId:
+                    text.length < 3 || text.length > 50
+                      ? '아이디는 3자 이상 50자 이하로 입력해주세요.' : '',
+                      
                 }));
               }}
               style={styles.inputWithButton}

@@ -63,6 +63,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 12,
     alignItems: 'center',
+    marginTop : 15,
   },
   submitText: {
     color: COLORS.primaryText,

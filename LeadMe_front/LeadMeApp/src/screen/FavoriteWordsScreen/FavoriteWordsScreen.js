@@ -12,6 +12,7 @@ export const FavoriteProvider = ({ children }) => {
   const [favorites, setFavorite] = useState([]);
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false); // Provider 로직 로그인 이후 제한 위해 수정
 
   const fetchFavorites = async () => {
     try {
@@ -42,7 +43,15 @@ export const FavoriteProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchFavorites();
+    const checkLoginAndFetch = async () => {
+      const token = await AsyncStorage.getItem('access_token');
+      const userId = await AsyncStorage.getItem('userId');
+      if(token&&userId){
+        await fetchFavorites();
+        setInitialized(true);
+      }
+    };
+    checkLoginAndFetch();
   }, []);
 
   useEffect(() => {
@@ -160,7 +169,9 @@ export const FavoriteWordsScreen = ({ navigation }) => {
           );
         }}
       />
-      <BackButton style={{ position: 'absolute', bottom: 20, alignSelf: 'center' }} />
+      <View style={{alignItems: 'center'}}>
+        <BackButton style={{ position: 'absolute', bottom: 20, alignItems: 'center'}} />
+      </View>
     </View>
   );
 };
