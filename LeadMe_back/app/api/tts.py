@@ -11,6 +11,7 @@ from database import get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
+
 router = APIRouter()
 polly_service = AmazonPollyService()
 

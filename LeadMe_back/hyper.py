@@ -477,7 +477,7 @@ class HyperbolicVocalFatigueAnalyzer:
                 import matplotlib.font_manager as fm
                 # Windows 기본 한글 폰트 설정
                 plt.rcParams['font.family'] = ['Malgun Gothic', 'Arial Unicode MS', 'DejaVu Sans']
-                plt.rcParams['axes.unicode_minus'] = False
+                plt.rcParams['axes.unicode_mi  nus'] = False
             except:
                 # 폰트 설정 실패시 영어로 표시
                 pass

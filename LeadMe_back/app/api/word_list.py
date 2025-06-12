@@ -20,7 +20,7 @@ router = APIRouter()
 def read_words(
         user_id: Optional[str] = None,  # ← user_id 쿼리 파라미터로 받음
         skip: int = 0,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
 ):
     """모든 단어 목록을 반환하며, user_id가 주어지면 즐겨찾기 여부도 포함합니다."""
     words = db.query(models.WordList).offset(skip).all()
