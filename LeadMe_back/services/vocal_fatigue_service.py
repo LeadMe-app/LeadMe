@@ -52,126 +52,126 @@ class VocalFatigueAnalysisService:
             return 0.01
         return abs(spm0 - spm1) / (spm0 * dt)
 
-    def analyze_audio_file_12segments(self, audio_data: bytes, user_id: str = None,
-                                  save_to_db: bool = False) -> Dict:
-    """
-    업로드된 음성 데이터를 12구간으로 분할하여 분석
+        def analyze_audio_file_12segments(self, audio_data: bytes, user_id: str = None,
+                                      save_to_db: bool = False) -> Dict:
+        """
+        업로드된 음성 데이터를 12구간으로 분할하여 분석
 
-    Args:
-        audio_data: 음성 파일 바이트 데이터
-        user_id: 사용자 ID
-        save_to_db: 데이터베이스 저장 여부
+        Args:
+            audio_data: 음성 파일 바이트 데이터
+            user_id: 사용자 ID
+            save_to_db: 데이터베이스 저장 여부
 
-    Returns:
-        전체 분석 결과
-    """
-    logger.info("=== 12구간 분할 음성 피로 분석 시작 ===")
+        Returns:
+            전체 분석 결과
+        """
+        logger.info("=== 12구간 분할 음성 피로 분석 시작 ===")
 
-    temp_file_path = None
-    try:
-        # 1. 바이트 데이터를 임시 파일로 저장
-        import tempfile
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
-            temp_file.write(audio_data)
-            temp_file_path = temp_file.name
+        temp_file_path = None
+        try:
+            # 1. 바이트 데이터를 임시 파일로 저장
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+                temp_file.write(audio_data)
+                temp_file_path = temp_file.name
 
-        # 2. 임시 파일에서 음성 로드
-        y, sr = librosa.load(temp_file_path, sr=None)
-        total_duration = librosa.get_duration(y=y, sr=sr)
+            # 2. 임시 파일에서 음성 로드
+            y, sr = librosa.load(temp_file_path, sr=None)
+            total_duration = librosa.get_duration(y=y, sr=sr)
 
-        if total_duration < 60:
-            return {
-                "status": "error",
-                "error": "분석을 위해서는 최소 1분 이상의 음성이 필요합니다."
+            if total_duration < 60:
+                return {
+                    "status": "error",
+                    "error": "분석을 위해서는 최소 1분 이상의 음성이 필요합니다."
+                }
+
+            logger.info(f"총 길이: {total_duration:.2f}초")
+
+            # 3. 12구간으로 균등 분할
+            segment_duration = total_duration / 12
+            segments = []
+
+            for i in range(12):
+                start_time = i * segment_duration
+                end_time = (i + 1) * segment_duration
+
+                # 해당 구간의 오디오 추출
+                start_sample = int(start_time * sr)
+                end_sample = int(end_time * sr)
+                segment_audio = y[start_sample:end_sample]
+
+                # 구간별 SPM 계산
+                segment_result = self.analyze_audio_segment(
+                    segment_audio, sr, start_time, end_time, i + 1
+                )
+                segments.append(segment_result)
+
+                logger.info(f"구간 {i + 1}/12: {start_time:.1f}-{end_time:.1f}초, SPM: {segment_result['spm']}")
+
+            # 4. 전기/중기/말기 SPM 계산 (4구간씩)
+            early_segments = segments[0:4]  # 1-4구간
+            middle_segments = segments[4:8]  # 5-8구간
+            late_segments = segments[8:12]  # 9-12구간
+
+            early_spm = self._calculate_average_spm(early_segments)
+            middle_spm = self._calculate_average_spm(middle_segments)
+            late_spm = self._calculate_average_spm(late_segments)
+            overall_spm = self._calculate_average_spm(segments)
+
+            # 5. 하이퍼볼릭 모델 피팅
+            model_result = self.fit_hyperbolic_model(segments)
+
+            # 6. 그래프 생성 (Base64)
+            graph_result = self.create_analysis_graph(segments, model_result,
+                                                      early_spm, middle_spm, late_spm, overall_spm)
+
+            # 7. 최종 결과 구성
+            final_result = {
+                "status": "success",
+                "analysis_type": "12_segment_vocal_fatigue",
+                "timestamp": datetime.now().isoformat(),
+                "audio_info": {
+                    "total_duration": total_duration,
+                    "segment_count": 12,
+                    "segment_duration": segment_duration,
+                    "valid_segments": len([s for s in segments if s["is_valid"]])
+                },
+                "spm_analysis": {
+                    "early_spm": early_spm,  # 전기 (1-4구간)
+                    "middle_spm": middle_spm,  # 중기 (5-8구간)
+                    "late_spm": late_spm,  # 말기 (9-12구간)
+                    "overall_spm": overall_spm,  # 전체
+                    "decline_early_to_late": round(((early_spm - late_spm) / early_spm * 100),
+                                                   1) if early_spm > 0 else 0
+                },
+                "segments": segments,
+                "graph_image": graph_result.get("image_base64"),
+                "graph_available": graph_result.get("status") == "success"
             }
 
-        logger.info(f"총 길이: {total_duration:.2f}초")
+            # 모델 결과가 있으면 추가
+            if model_result:
+                final_result.update(model_result)
 
-        # 3. 12구간으로 균등 분할
-        segment_duration = total_duration / 12
-        segments = []
+            # 8. 최종 결과 반환
+            logger.info("=== 분석 완료 ===")
+            logger.info(f"전기 SPM: {early_spm}, 중기 SPM: {middle_spm}, 말기 SPM: {late_spm}")
+            logger.info(f"전체 SPM: {overall_spm}")
 
-        for i in range(12):
-            start_time = i * segment_duration
-            end_time = (i + 1) * segment_duration
+            return final_result
 
-            # 해당 구간의 오디오 추출
-            start_sample = int(start_time * sr)
-            end_sample = int(end_time * sr)
-            segment_audio = y[start_sample:end_sample]
+        except Exception as e:
+            logger.error(f"분석 실패: {e}")
+            return {"status": "error", "error": str(e)}
 
-            # 구간별 SPM 계산
-            segment_result = self.analyze_audio_segment(
-                segment_audio, sr, start_time, end_time, i + 1
-            )
-            segments.append(segment_result)
-
-            logger.info(f"구간 {i + 1}/12: {start_time:.1f}-{end_time:.1f}초, SPM: {segment_result['spm']}")
-
-        # 4. 전기/중기/말기 SPM 계산 (4구간씩)
-        early_segments = segments[0:4]  # 1-4구간
-        middle_segments = segments[4:8]  # 5-8구간
-        late_segments = segments[8:12]  # 9-12구간
-
-        early_spm = self._calculate_average_spm(early_segments)
-        middle_spm = self._calculate_average_spm(middle_segments)
-        late_spm = self._calculate_average_spm(late_segments)
-        overall_spm = self._calculate_average_spm(segments)
-
-        # 5. 하이퍼볼릭 모델 피팅
-        model_result = self.fit_hyperbolic_model(segments)
-
-        # 6. 그래프 생성 (Base64)
-        graph_result = self.create_analysis_graph(segments, model_result,
-                                                  early_spm, middle_spm, late_spm, overall_spm)
-
-        # 7. 최종 결과 구성
-        final_result = {
-            "status": "success",
-            "analysis_type": "12_segment_vocal_fatigue",
-            "timestamp": datetime.now().isoformat(),
-            "audio_info": {
-                "total_duration": total_duration,
-                "segment_count": 12,
-                "segment_duration": segment_duration,
-                "valid_segments": len([s for s in segments if s["is_valid"]])
-            },
-            "spm_analysis": {
-                "early_spm": early_spm,  # 전기 (1-4구간)
-                "middle_spm": middle_spm,  # 중기 (5-8구간)
-                "late_spm": late_spm,  # 말기 (9-12구간)
-                "overall_spm": overall_spm,  # 전체
-                "decline_early_to_late": round(((early_spm - late_spm) / early_spm * 100),
-                                               1) if early_spm > 0 else 0
-            },
-            "segments": segments,
-            "graph_image": graph_result.get("image_base64"),
-            "graph_available": graph_result.get("status") == "success"
-        }
-
-        # 모델 결과가 있으면 추가
-        if model_result:
-            final_result.update(model_result)
-
-        # 8. 최종 결과 반환
-        logger.info("=== 분석 완료 ===")
-        logger.info(f"전기 SPM: {early_spm}, 중기 SPM: {middle_spm}, 말기 SPM: {late_spm}")
-        logger.info(f"전체 SPM: {overall_spm}")
-
-        return final_result
-
-    except Exception as e:
-        logger.error(f"분석 실패: {e}")
-        return {"status": "error", "error": str(e)}
-    
-    finally:
-        # 임시 파일 정리
-        if temp_file_path and os.path.exists(temp_file_path):
-            try:
-                os.remove(temp_file_path)
-                logger.info("임시 파일 삭제 완료")
-            except Exception as cleanup_error:
-                logger.warning(f"임시 파일 정리 중 오류: {cleanup_error}")
+        finally:
+            # 임시 파일 정리
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.remove(temp_file_path)
+                    logger.info("임시 파일 삭제 완료")
+                except Exception as cleanup_error:
+                    logger.warning(f"임시 파일 정리 중 오류: {cleanup_error}")
 
     def analyze_audio_segment(self, segment_audio: np.ndarray, sr: int,
                               start_time: float, end_time: float, segment_num: int) -> Dict:
