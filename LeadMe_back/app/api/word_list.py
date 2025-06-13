@@ -98,45 +98,6 @@ def read_word(
     }
 
 
-'''
-@router.post("/upload/image/")
-async def upload_word_image(
-        file: UploadFile = File(...),
-        word: str = None
-):
-    """단어 이미지를 업로드합니다."""
-
-    # 파일 확장자 검증
-    if not file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="지원되지 않는 파일 형식입니다. .jpg, .jpeg, .png, .gif 형식만 허용됩니다."
-        )
-
-    # 업로드 디렉토리 경로
-    UPLOAD_DIR = "uploads/images"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-    # 파일명 생성 (단어 포함)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    filename = f"{word}_{timestamp}{os.path.splitext(file.filename)[1]}" if word else f"{timestamp}{os.path.splitext(file.filename)[1]}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-
-    # 파일 저장
-    with open(file_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
-
-    # 향후 여기에 AWS S3 업로드 로직 추가 예정
-
-    return {
-        "filename": filename,
-        "file_path": file_path,
-        "image_url": f"/uploads/images/{filename}",
-        "message": "이미지가 성공적으로 업로드되었습니다."
-    }
-'''
-
 ''' 즐겨찾기 추가'''
 @router.post("/favorites/", response_model=WordFavoriteResponse, status_code=status.HTTP_201_CREATED)
 def add_word_to_favorites(
