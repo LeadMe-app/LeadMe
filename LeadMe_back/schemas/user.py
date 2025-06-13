@@ -49,7 +49,7 @@ class UserResponse(BaseModel):
 class UserDetail(UserResponse):
     pass
 
-
+#밑에 클래스들은 다른파일에서 호출하는 곳이 없습니다.(사용 안하고 있음)
 # 사용자 설정 기본 모델
 class UserSettingsBase(BaseModel):
     user_id: str
