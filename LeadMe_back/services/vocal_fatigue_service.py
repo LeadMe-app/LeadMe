@@ -137,10 +137,10 @@ class VocalFatigueAnalysisService:
                     "valid_segments": len([s for s in segments if s["is_valid"]])
                 },
                 "spm_analysis": {
-                    "early_spm": early_spm,  # 전기 (1-4구간)
-                    "middle_spm": middle_spm,  # 중기 (5-8구간)
-                    "late_spm": late_spm,  # 말기 (9-12구간)
-                    "overall_spm": overall_spm,  # 전체
+                    "early_spm": early_spm,
+                    "middle_spm": middle_spm,
+                    "late_spm": late_spm,
+                    "overall_spm": overall_spm,
                     "decline_early_to_late": round(((early_spm - late_spm) / early_spm * 100),
                                                    1) if early_spm > 0 else 0
                 },
@@ -163,7 +163,7 @@ class VocalFatigueAnalysisService:
         except Exception as e:
             logger.error(f"분석 실패: {e}")
             return {"status": "error", "error": str(e)}
-
+        
         finally:
             # 임시 파일 정리
             if temp_file_path and os.path.exists(temp_file_path):
