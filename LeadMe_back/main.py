@@ -6,11 +6,13 @@ from app.api import tts
 import os
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+import asyncio
+import openai
 
 # 내부 모듈 임포트
 from database import get_db, engine
 import models
-from app.api import users, speech_sessions, word_list, speed_analysis, speech_recognition, auth, sentence_generation
+from app.api import users, speech_sessions, word_list, speed_analysis, auth, sentence_generation, tts
 
 # 기본 디렉토리 생성
 os.makedirs("uploads/audio", exist_ok=True)
@@ -54,11 +56,10 @@ app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(speech_sessions.router, prefix="/api/speech", tags=["speech"])
 app.include_router(word_list.router, prefix="/api/words", tags=["words"])
 app.include_router(speed_analysis.router, prefix="/api/speed", tags=["speed"])
-app.include_router(speech_recognition.router, prefix="/api/voice", tags=["voice"])
 app.include_router(sentence_generation.router, prefix="/api/sentence", tags=["sentence"])
 app.include_router(tts.router, prefix="/api/tts", tags=["tts"])
 
-# 서버 시작 이벤트
+
 # 서버 시작 이벤트
 @app.on_event("startup")
 async def startup():
@@ -67,23 +68,35 @@ async def startup():
     print("서버가 시작되었습니다.")
     print(f"데이터베이스 연결: {engine.url}")
 
-    from sqlalchemy import text  # 꼭 추가해줘!
-
-try:
-    print("💡 try 블록 진입")
-
-    with engine.connect() as connection:
-        result = connection.execute(text("SELECT 1;"))  # text()로 감싸야 함
-        one = result.fetchone()
-        print(f"✅ 데이터베이스 연결 성공! 결과: {one}")
-except Exception as e:
-    import traceback
-    print(f"❌ 데이터베이스 연결 실패: {e}")
-    traceback.print_exc()
+    try:
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT 1;"))  # text()로 감싸야 함
+            one = result.fetchone()
+            print(f"✅ 데이터베이스 연결 성공! 결과: {one}")
+    except Exception as e:
+        import traceback
+        print(f"❌ 데이터베이스 연결 실패: {e}")
+        traceback.print_exc()
 
 
     # 디렉토리 확인
     print(f"업로드 디렉토리 확인: {os.path.exists('uploads/audio')} (audio), {os.path.exists('uploads/images')} (images)")
+
+    # OpenAI 워밍업 비동기 태스크 실행
+    async def warmup_openai():
+        try:
+            await asyncio.to_thread(
+                openai.ChatCompletion.create,
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": "안녕하세요"}],
+                timeout=5,
+            )
+            print("OpenAI API 워밍업 완료")
+        except Exception as e:
+            print(f"워밍업 중 오류: {e}")
+
+    asyncio.create_task(warmup_openai())
+
 
 # 서버 종료 이벤트
 @app.on_event("shutdown")

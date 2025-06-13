@@ -24,7 +24,7 @@ def generate_prompt(age_group: str) -> str:
     if age_group == "5~12세":
         return (
             "5~12세 어린이가 문장 발음 연습하기 좋은 짧은 길이의 한국어 문장을 하나 만들어줘. "
-            "내용은 쉽고, 재미있게게 상상력을 자극하는 표현으로 해줘. "
+            "내용은 쉽고, 재미있게 상상력을 자극하는 표현으로 해줘. "
         )
     elif age_group == "13~19세":
         return (
@@ -43,17 +43,6 @@ def generate_prompt(age_group: str) -> str:
             "연령대에 관계없이 누구나 이해할 수 있도록."
         )
 
-'''
-def generate_prompt(age_group: str) -> str:
-    if age_group == "5~12세":
-        return "5~12세 어린이가 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. 단어는 쉽고 재미있게!"
-    elif age_group == "13~19세":
-        return "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 만들어줘. 너무 유치하지 않게, 학생들의 수준에 맞춘 표현으로!"
-    elif age_group == "20세 이상":
-        return "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 만들어줘. 자연스럽고 실생활에서 쓸 수 있는 문장으로 부탁해."
-    else:
-        return "발음 연습용 쉬운 한국어어 문장을 만들어줘."
-'''
 
 # GPT 문장 생성 함수 (단어 + 연령대 기반)
 async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
@@ -61,7 +50,7 @@ async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
          "문장은 반드시 하나만 만들고, 두 줄이 넘지 않도록 15단어 이내의 짧고 간결한 문장으로 해줘. " \
          "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘."\
          "문장의 어순이 맞도록, 자연스러운 문장이 되도록, 이질감 없는 문장으로 만들어줘"
-    logger.info(f"프롬프트 생성: {prompt}")
+    # logger.info(f"프롬프트 생성: {prompt}")
 
     try:
         response = await asyncio.to_thread(
@@ -75,7 +64,7 @@ async def get_sentence_for_word_and_age(word: str, age_group: str) -> str:
             raise ValueError("OpenAI 응답에 선택지가 없습니다.")
 
         content = response["choices"][0]["message"]["content"].strip()
-        logger.info(f"GPT 응답 수신 완료: {content}")
+        # logger.info(f"GPT 응답 수신 완료: {content}")
         
         return content
 

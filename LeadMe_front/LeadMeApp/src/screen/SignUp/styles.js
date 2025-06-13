@@ -62,8 +62,8 @@ export const styles = StyleSheet.create({
     padding: 14,
     width: '100%',
     borderRadius: 12,
-    marginTop: 20,
     alignItems: 'center',
+    marginTop : 15,
   },
   submitText: {
     color: COLORS.primaryText,

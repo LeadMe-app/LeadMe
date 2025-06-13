@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Date, DateTime, CheckConstraint
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Date, DateTime, CheckConstraint, func
 from sqlalchemy.orm import relationship
 import datetime
 from database import Base
@@ -17,6 +17,10 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
+    #비밀번호 틀릴 시 30초 락 코드
+    failed_attempts = Column(Integer, default=0, nullable=False)  # 로그인 실패 횟수
+    lock_until = Column(DateTime, nullable=True)  # 로그인 제한 해제 시간
+
     # CHECK 제약 조건 추가
     __table_args__ = (
         CheckConstraint("age_group IN ('5~12세', '13~19세', '20세 이상')", name="check_age_group"),
@@ -26,13 +30,14 @@ class User(Base):
     speech_sessions = relationship("SpeechSession", back_populates="user")
     word_favorites = relationship("WordFavorites", back_populates="user")
     speed_analyses = relationship("SpeedAnalysis", back_populates="user")
-    user_settings = relationship("UserSettings", back_populates="user", uselist=False)
+    user_sessions = relationship("UserSession", back_populates="user")
     age_group_rate = relationship(
         "AgeGroupSpeechRate",
         primaryjoin="User.age_group == foreign(AgeGroupSpeechRate.age_group)",
         viewonly=True,
         uselist=False
     )
+
 
 # 2. Word_List (단어 리스트 테이블)
 class WordList(Base):
@@ -72,7 +77,6 @@ class SpeedAnalysis(Base):
     # 관계 설정
     user = relationship("User", back_populates="speed_analyses")
 
-
 # 5. Age_Group_Speech_Rate (연령대 별로 발화 속도 정의 테이블)
 class AgeGroupSpeechRate(Base):
     __tablename__ = "age_group_speech_rate"
@@ -87,17 +91,16 @@ class AgeGroupSpeechRate(Base):
         CheckConstraint("age_group IN ('5~12세', '13~19세', '20세 이상')", name="check_age_group_speech_rate"),
     )
 
+# 6. user_sessions (로그인 세션 테이블)
+class UserSession(Base):
+    __tablename__ = "user_sessions" 
 
-# 6. User_Settings (사용자가 선택한 속도 저장 테이블)
-class UserSettings(Base):
-    __tablename__ = "user_settings"
-
-    user_id = Column(String, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
-    selected_speech_rate = Column(Integer, nullable=False)
+    user_id = Column(String, ForeignKey("users.user_id"), primary_key=True)
+    token = Column(String, unique=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # 관계 설정
-    user = relationship("User", back_populates="user_settings")
-
+    user = relationship("User", back_populates="user_sessions")
 
 # SpeechSession 클래스 추가 (Speech 세션 테이블)
 class SpeechSession(Base):

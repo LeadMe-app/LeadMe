@@ -6,6 +6,7 @@ import os
 import random
 from datetime import datetime
 from sqlalchemy import func
+from fastapi import Query
 
 # 내부 모듈 임포트
 from database import get_db
@@ -19,7 +20,7 @@ router = APIRouter()
 def read_words(
         user_id: Optional[str] = None,  # ← user_id 쿼리 파라미터로 받음
         skip: int = 0,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
 ):
     """모든 단어 목록을 반환하며, user_id가 주어지면 즐겨찾기 여부도 포함합니다."""
     words = db.query(models.WordList).offset(skip).all()
@@ -27,10 +28,12 @@ def read_words(
     # 즐겨찾기 정보 미리 조회
     favorite_word_ids = set()
     if user_id:
-        favorites = db.query(models.WordFavorites.word_id).filter(
-            models.WordFavorites.user_id == user_id
-        ).all()
-        favorite_word_ids = set(fav.word_id for fav in favorites)
+        favorite_word_ids = set(
+            db.scalars(
+                db.query(models.WordFavorites.word_id)
+                .filter(models.WordFavorites.user_id == user_id)
+            ).all()
+        )
 
     # is_favorite 포함한 응답 리스트 구성
     result = []
@@ -185,9 +188,9 @@ def add_word_to_favorites(
 ''' 즐겨찾기 리스트 조회'''
 @router.get("/favorites/", response_model=List[WordFavoriteResponse])
 def read_favorites(
-        user_id: Optional[str] = None,
+        user_id: str = Query(..., description="사용자 ID는 필수입니다."),
         skip: int = 0,
-        limit: int = 100,
+        limit: int = 188,
         db: Session = Depends(get_db)
 ):
     """사용자의 즐겨찾기 단어 목록을 반환합니다."""
@@ -196,7 +199,7 @@ def read_favorites(
     if user_id:
         query = query.filter(models.WordFavorites.user_id == user_id)
 
-    favorites = query.offset(skip).limit(limit)
+    favorites = query.offset(skip).limit(limit).all()
     return favorites
 
 

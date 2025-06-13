@@ -2,17 +2,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from datetime import timedelta, datetime
 from jose import JWTError, jwt
 from typing import Optional, Dict
-import random
-import string
-import time
-import asyncio
 
 # 내부 모듈 임포트
 from database import get_db
 import models
+from models import UserSession
 from app.core.security import (
     verify_password,
     get_password_hash,
@@ -22,7 +20,7 @@ from app.core.security import (
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 from schemas.auth import Token, TokenData, UserLogin, \
-    UserCreate, UserIdCheck, FindUserId, UserUpdate, ResetPasswordOnlyRequest, VerifyResetUserRequest
+    UserCreate, UserIdCheck, PhoneNumberCheck, FindUserId, UserUpdate, ResetPasswordOnlyRequest, VerifyResetUserRequest
 
 router = APIRouter()
 
@@ -95,6 +93,20 @@ def record_login_attempt(user_id: str, success: bool) -> None:
         login_attempts[user_id]["attempts"] += 1
 
 
+def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+    except JWTError:
+        raise HTTPException(status_code=403, detail="Invalid token")
+
+    # 세션 유효성 확인
+    session = db.query(UserSession).filter(UserSession.user_id == user_id, UserSession.token == token).first()
+    if not session:
+        raise HTTPException(status_code=401, detail="Session expired or logged in from another device")
+
+    return user_id  # 또는 User 반환
+
 async def get_current_user(
         token: str = Depends(oauth2_scheme),
         db: Session = Depends(get_db)
@@ -133,9 +145,21 @@ async def get_current_user(
 
     if user is None:
         raise credentials_exception
+    
+    # ✅ UserSession에서 저장된 토큰 확인
+    session = db.query(UserSession).filter(UserSession.user_id == user.user_id).first()
+    if not session or session.token != token:
+        print("🚫 유효하지 않은 세션 또는 토큰")
+        raise credentials_exception
 
     return user
 
+def get_user_id_from_token(token: str) -> str:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
 
 def authenticate_user(db: Session, user_id: str, password: str) -> Optional[models.User]:
     """
@@ -268,6 +292,17 @@ async def login(
         expires_delta=access_token_expires
     )
 
+    # ✅ 기존 세션 삭제 → 새 토큰 저장 (한 계정당 하나의 세션 유지)
+    existing_session = db.query(UserSession).filter(UserSession.user_id == user_id).first()
+    if existing_session:
+        existing_session.token = access_token
+        existing_session.created_at = func.now()
+    else:
+        new_session = UserSession(user_id=user_id, token=access_token)
+        db.add(new_session)
+
+    db.commit()
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -307,6 +342,69 @@ async def check_user_id(
 
     return {"available": True, "message": "사용 가능한 사용자 ID입니다."}
 
+@router.post("/check-phone-number")
+async def check_phone_number(
+        phone_check: PhoneNumberCheck,
+        db: Session = Depends(get_db)
+):
+    """
+    전화번호 중복 확인
+
+    Args:
+        phone_check: 확인할 전화번호
+        db: 데이터베이스 세션
+
+    Returns:
+        Dict: 사용 가능 여부
+    """
+    db_user = db.query(models.User).filter(models.User.phone_number == phone_check.phone_number).first()
+
+    if db_user:
+        return {
+            "available": False, 
+            "message": "이미 등록된 전화번호입니다."
+        }
+
+    return {
+        "available": True, 
+        "message": "사용 가능한 전화번호입니다."
+    }
+
+@router.post("/login-check-phone-number")
+async def check_phone_number_for_update(
+        phone_check: PhoneNumberCheck,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
+):
+    """
+    회원정보 수정용 전화번호 중복 확인 (본인 번호는 검사 생략)
+    """
+    # 본인의 기존 번호와 같은 경우 - 검사 없이 바로 통과
+    if phone_check.phone_number == current_user.phone_number:
+        return {
+            "available": True,
+            "message": "기존 번호와 동일합니다.",
+            "is_same_number": True  # 프론트엔드에서 구분할 수 있도록
+        }
+
+    # 다른 번호인 경우에만 중복 검사 진행
+    db_user = db.query(models.User).filter(
+        models.User.phone_number == phone_check.phone_number,
+        models.User.user_id != current_user.user_id
+    ).first()
+
+    if db_user:
+        return {
+            "available": False,
+            "message": "이미 등록된 전화번호입니다.",
+            "is_same_number": False
+        }
+
+    return {
+        "available": True,
+        "message": "사용 가능한 전화번호입니다.",
+        "is_same_number": False
+    }
 
 @router.post("/find-userid")
 async def find_user_id(
@@ -438,3 +536,12 @@ async def get_login_attempts(
             "lockout_until": None,
             "is_locked": False
         }
+
+@router.post("/logout")
+async def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    user_id = get_user_id_from_token(token)  # JWT에서 user_id 추출 함수 필요
+    session = db.query(UserSession).filter(UserSession.user_id == user_id, UserSession.token == token).first()
+    if session:
+        db.delete(session)
+        db.commit()
+    return {"message": "로그아웃되었습니다"}

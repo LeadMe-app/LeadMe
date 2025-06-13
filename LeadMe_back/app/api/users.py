@@ -54,8 +54,10 @@ def update_user_me(
         db: Session = Depends(get_db),
         current_user: models.User = Depends(get_current_user)
 ):
+    print("user dict (exclude_unset=True, by_alias=True):", user.dict(exclude_unset=True, by_alias=True))
+
     for key, value in user.dict(exclude_unset=True, by_alias=True).items():
-        if key == "user_pw":
+        if key == "password":
             hashed_pw = get_password_hash(value)
             setattr(current_user, "user_pw", hashed_pw)
         else:

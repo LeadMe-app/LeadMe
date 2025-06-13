@@ -1,59 +1,92 @@
-import openai
-from openai.error import OpenAIError, RateLimitError, APIError, APIConnectionError, InvalidRequestError, AuthenticationError, Timeout
 import logging
+import openai
+import re
+from openai import OpenAIError
+from openai.error import RateLimitError
 import os
 import asyncio
-import time
 from dotenv import load_dotenv
 
+# 환경변수 로드
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # 로그 설정
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)  # 로그 레벨 설정 (INFO, ERROR 등)
-
-# 콘솔에 로그 출력 설정
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)  # 콘솔에 출력할 최소 로그 레벨 설정
+logger = logging.getLogger("sentence_generation")
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
+# 금지어 리스트
+FORBIDDEN_PATTERNS = [
+    r"\b술\b",
+    r"\b맥주\b",
+    r"\b소주\b",
+    r"\b담배\b",
+    r"\b도박\b",
+    r"\b폭력\b",
+    r"\b성적",
+    r"\b욕설\b",
+]
 
-# 연령대별 속도 맵 (단어 수 기준)
-age_group_speed_map = {
-    '5~12세': {
-        '천천히': 2,   # 1초에 2단어
-        '중간': 3,     # 1초에 3단어
-        '빠르게': 4      # 1초에 4단어
-    },
-    '13~19세': {
-        '천천히': 3,   # 1초에 3단어
-        '중간': 5,     # 1초에 5단어
-        '빠르게': 6      # 1초에 6단어
-    },
-    '20세 이상': {
-        '천천히': 4,   # 1초에 4단어
-        '중간': 6,     # 1초에 6단어
-        '빠르게': 8      # 1초에 8단어
-    }
-}
+# 패턴 컴파일 (대소문자 무시)
+compiled_patterns = [re.compile(pattern, re.IGNORECASE) for pattern in FORBIDDEN_PATTERNS]
 
-# 연령대에 맞는 프롬프트 생성
+def contains_forbidden_content(text: str) -> bool:
+    for pattern in compiled_patterns:
+        if pattern.search(text):
+            return True
+    return False
+
+# 연령대별 프롬프트 생성
 def generate_prompt(age_group: str) -> str:
     if age_group == "5~12세":
-        return "5~12세 어린이가 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. 단어는 쉽고 재미있게!"
+        return (
+            "5~12세 어린이가 문장 발음 연습하기 좋은 짧은 길이의 한국어 문장을 하나 만들어줘. "
+            "현실적인 주제를 포함해서, **한 문장이지만 반드시 10단어 내외로 충분히 길게** 만들어줘. "
+            "내용은 쉽고, 재미있게 상상력을 자극하는 표현으로 해줘. "
+            "문장은 짧고 간결하게, 한 문장으로만 만들어줘."
+        )
     elif age_group == "13~19세":
-        return "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 만들어줘. 너무 유치하지 않게, 자연스럽고 일상적인 표현으로!"
+        return (
+            "13~19세 청소년이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
+            "너무 유치하지 않게, 자연스럽고 일상적인 상황에서 쓰는 표현으로 해줘. "
+            "현실적인 주제를 포함해서, **한 문장이지만 반드시 15단어 내외로 충분히 길게** 만들어줘. "
+            "**짧은 문장은 피하고**, 충분한 길이의 문장을 만들어줘."
+        )
     elif age_group == "20세 이상":
-        return "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 만들어줘. 자연스럽고 실생활에서 쓸 수 있는 문장으로 부탁해."
+        return (
+            "20세 이상 성인이 발음 연습하기 좋은 한국어 문장을 하나 만들어줘. "
+            "자연스럽고 실생활에서 자주 쓰는 대화나 표현으로 하고, "
+            "현실적인 주제를 포함해서, **한 문장이지만 반드시 15단어 내외로 충분히 길게** 만들어줘. "
+            "**짧은 문장은 피하고**, 충분한 길이의 문장을 만들어줘. "
+            "훈련용 앱에서 사용할 수 있도록 부적절한 주제는 절대 포함하지 마."
+        )
     else:
-        return "발음 연습용 쉬운 한국어어 문장을 만들어줘."
+        return (
+            "발음 연습용으로 자연스럽고 명확한 한국어 문장을 하나 만들어줘. "
+            "연령대에 관계없이 누구나 이해할 수 있도록. "
+            "문장은 한 문장으로 간결하고 자연스럽게 만들어줘."
+        )
 
-# GPT 문장 생성 함수
+# 문장부호 제거
+def remove_punctuation(text: str) -> str:
+    cleaned = re.sub(r"[^\w\s가-힣]", "", text)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+# GPT 호출 함수
 async def get_sentence_for_age_group(age_group: str) -> str:
-    prompt = generate_prompt(age_group)
+    prompt = (
+        f"{generate_prompt(age_group)} "
+        "문장은 반드시 하나만 만들어줘. "
+        "기존에 자주 쓰이는 표현은 피하고 새로운 문장을 만들어줘. "
+        "문장의 어순이 자연스럽고 발화 연습에 적절한 흐름이 되도록 해줘."
+    )
+
+    logger.info(f"프롬프트 생성: {prompt}")
 
     try:
         response = await asyncio.to_thread(
@@ -62,64 +95,64 @@ async def get_sentence_for_age_group(age_group: str) -> str:
             messages=[{"role": "user", "content": prompt}],
         )
 
-        # 응답이 없으면 오류 처리
-        if not response.get('choices'):
+        if not response.get("choices"):
+            logger.error("OpenAI 응답에 선택지가 없습니다.")
             raise ValueError("OpenAI 응답에 선택지가 없습니다.")
-        
-        # 응답 반환
-        return response['choices'][0]['message']['content'].strip()
+
+        content = response["choices"][0]["message"]["content"].strip()
+        logger.info(f"[{age_group}] GPT 응답 수신 완료 (원문): {content}")
+
+        # 첫 문장만 추출
+        first_sentence = content.split("\n")[0].strip()
+        clean_content = remove_punctuation(first_sentence)
+        logger.info(f"[{age_group}] 문장부호 제거 후 문장: {clean_content}")
+
+        # 부적절한 내용 감지
+        if contains_forbidden_content(clean_content):
+            logger.warning(f"[{age_group}] 부적절한 문장 감지됨: {clean_content}")
+            raise ValueError("부적절한 문장이 감지되었습니다.")
+
+        return clean_content
 
     except RateLimitError:
-        logger.error("RateLimitError: 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
-        return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."
-
-    except AuthenticationError:
-        logger.error("AuthenticationError: OpenAI 인증 오류가 발생했습니다. API 키를 확인해주세요.")
-        return "OpenAI 인증 오류가 발생했습니다. API 키를 확인해주세요."
-
-    except Timeout:
-        logger.error("Timeout: OpenAI 요청이 시간 초과되었습니다.")
-        return "OpenAI 요청이 시간 초과되었습니다."
-
-    except InvalidRequestError as e:
-        logger.error(f"InvalidRequestError: 잘못된 요청입니다: {str(e)}")
-        return f"잘못된 요청입니다: {str(e)}"
-
-    except APIConnectionError:
-        logger.error("APIConnectionError: OpenAI 서버에 연결할 수 없습니다.")
-        return "OpenAI 서버에 연결할 수 없습니다."
-
-    except APIError:
-        logger.error("APIError: OpenAI 서버 오류가 발생했습니다.")
-        return "OpenAI 서버 오류가 발생했습니다."
-
+        logger.warning("RateLimitError: 호출이 너무 많습니다.")
+        raise RuntimeError("OpenAI API 호출이 너무 많습니다. 잠시 후 다시 시도해주세요.")
     except OpenAIError as e:
-        logger.error(f"OpenAIError: {str(e)}")
-        return f"OpenAI 오류 발생: {str(e)}"
+        logger.error(f"OpenAIError 발생: {str(e)}")
+        raise RuntimeError(f"OpenAI 오류가 발생했습니다: {str(e)}")
+    except Exception as e:
+        logger.exception("예기치 못한 오류 발생")
+        raise RuntimeError(f"알 수 없는 오류가 발생했습니다: {str(e)}")
 
-# 속도 값 계산
-def get_speed(age_group: str, speed_label: str) -> float:
-    return age_group_speed_map.get(age_group, {}).get(speed_label, 4)
+# ✅ 부적절할 때만 재시도 로직
+async def get_sentence_with_retry_if_needed(age_group: str, max_retries: int = 3) -> str:
+    try:
+        # 1차 시도
+        return await get_sentence_for_age_group(age_group)
+    except ValueError as e:
+        logger.warning(f"[{age_group}] 초기 문장 부적절: {e}")
 
-# 노래방 효과 출력
-def display_karaoke_text(text: str, speed: float):
-    print("\n[노래방 효과 시작]\n")
-    for char in text:
-        print(char, end='', flush=True)
-        time.sleep(1 / speed)
-    print("\n[종료]\n")
+    # 재시도 시작
+    for attempt in range(1, max_retries + 1):
+        try:
+            sentence = await get_sentence_for_age_group(age_group)
+            return sentence
+        except ValueError as e:
+            logger.warning(f"[{age_group}] {attempt}회 재시도 실패: {e}")
+            continue
 
+    # 실패한 경우
+    raise RuntimeError(f"[{age_group}] 문장 생성에 계속 실패했습니다.")
+
+'''
 # 메인 실행
-'''async def main():
-    age_group = "5~12세"
-    speed_label = "천천히"
-    print(f"{age_group}, {speed_label}\n")
-    
-    sentence = await get_sentence_for_age_group(age_group)
-    print(f"\n생성된 문장: {sentence}\n")
-
-    speed = get_speed(age_group, speed_label)
-    display_karaoke_text(sentence, speed)
+async def main():
+    for age in ["5~12세", "13~19세", "20세 이상"]:
+        try:
+            sentence = await get_sentence_with_retry(age)
+            print(f"[{age}] 생성된 문장:\n{sentence}\n")
+        except Exception as e:
+            print(f"[{age}] 문장 생성 실패: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())

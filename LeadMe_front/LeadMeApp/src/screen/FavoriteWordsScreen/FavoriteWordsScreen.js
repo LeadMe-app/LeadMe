@@ -12,6 +12,7 @@ export const FavoriteProvider = ({ children }) => {
   const [favorites, setFavorite] = useState([]);
   const [words, setWords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false); // Provider 로직 로그인 이후 제한 위해 수정
 
   const fetchFavorites = async () => {
     try {
@@ -20,9 +21,7 @@ export const FavoriteProvider = ({ children }) => {
 
       const res = await axiosInstance.get('/api/words/favorites/', {
         headers: { Authorization: `Bearer ${token}` },
-        params: {
-          user_id: userId, 
-        },
+        params: { user_id: userId },
       });
       setFavorite(res.data);
     } catch (error) {
@@ -44,7 +43,15 @@ export const FavoriteProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchFavorites();
+    const checkLoginAndFetch = async () => {
+      const token = await AsyncStorage.getItem('access_token');
+      const userId = await AsyncStorage.getItem('userId');
+      if(token&&userId){
+        await fetchFavorites();
+        setInitialized(true);
+      }
+    };
+    checkLoginAndFetch();
   }, []);
 
   useEffect(() => {
@@ -70,7 +77,6 @@ export const FavoriteProvider = ({ children }) => {
     await fetchFavorites();
   };
 
-  // 즐겨찾기 삭제 요청
   const handleDeleteFavorite = async (favoriteId, wordId) => {
     try {
       const token = await AsyncStorage.getItem('access_token');
@@ -78,16 +84,12 @@ export const FavoriteProvider = ({ children }) => {
 
       const response = await axiosInstance.delete(`/api/words/favorites/`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: {
-          user_id: userId,
-          word_id: wordId,
-        },
+        params: { user_id: userId, word_id: wordId },
       });
 
       if (response.status === 204) {
-        // 즐겨찾기 삭제 후, 상태 갱신
         setFavorite(favorites.filter(fav => fav.favorite_id !== favoriteId));
-        await refreshFavorites(); // 갱신된 즐겨찾기 목록
+        await refreshFavorites();
         Alert.alert('즐겨찾기 삭제', '단어가 즐겨찾기에서 삭제되었습니다.');
       } else {
         Alert.alert('오류', '즐겨찾기 삭제에 실패했습니다.');
@@ -107,32 +109,27 @@ export const FavoriteProvider = ({ children }) => {
 
 export const useFavorites = () => useContext(FavoriteContext);
 
-// 즐겨찾기 화면
 export const FavoriteWordsScreen = ({ navigation }) => {
   const { favorites, words, loading, handleDeleteFavorite } = useFavorites();
 
-  const handleGoToWord = ({ word, word_id, image_url }) => {
+  const handleGoToWord = ({ word_id, index }) => {
     navigation.navigate('WordScreen', {
-      word,
       wordId: word_id,
-      imageUrl: image_url,
+      favorites: favorites,
+      currentIndex: index,
     });
   };
 
-  // 즐겨찾기된 단어가 없을 경우 처리
   if (favorites.length === 0) {
     return (
       <View style={styles.container}>
         <Logo />
         <Text style={styles.empty}>즐겨찾기된 단어가 없습니다.</Text>
-        <View>
-          <BackButton style={{ position: 'absolute', bottom: 20, alignSelf: 'center' }} />
-        </View>
+        <BackButton style={{ position: 'absolute', bottom: 20, alignSelf: 'center' }} />
       </View>
     );
   }
 
-  // 단어가 로딩 중일 경우 처리
   if (loading) {
     return (
       <View style={styles.container}>
@@ -149,30 +146,17 @@ export const FavoriteWordsScreen = ({ navigation }) => {
 
       <FlatList
         data={favorites}
-        keyExtractor={(item) => item.favorite_id.toString()} // favorite_id를 키로 사용
+        keyExtractor={(item) => item.favorite_id.toString()}
         renderItem={({ item, index }) => {
-          const word = words[index]; // words 배열에서 단어를 가져옴
-
-          // word가 아직 로딩되지 않았으면 "로딩 중..."을 표시
-          if (!word) {
-            return (
-              <TouchableOpacity style={styles.wordButton}>
-                <Text style={styles.wordText}>단어 로딩 중...</Text>
-              </TouchableOpacity>
-            );
-          }
+          const word = words[index];
 
           return (
             <View style={styles.wordItemContainer}>
               <TouchableOpacity
                 style={styles.wordButton}
-                onPress={() => handleGoToWord({
-                  word: word,
-                  word_id: item.word_id,
-                  image_url: item.image_url,
-                })}
+                onPress={() => handleGoToWord({ word_id: item.word_id, index })}
               >
-                <Text style={styles.wordText}>{word}</Text>
+                <Text style={styles.wordText}>{word || '단어 로딩 중...'}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -185,8 +169,8 @@ export const FavoriteWordsScreen = ({ navigation }) => {
           );
         }}
       />
-      <View>
-        <BackButton style={{ position: 'absolute', bottom: 20, alignSelf: 'center' }} />
+      <View style={{alignItems: 'center'}}>
+        <BackButton style={{ position: 'absolute', bottom: 20, alignItems: 'center'}} />
       </View>
     </View>
   );
