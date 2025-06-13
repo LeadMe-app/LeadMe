@@ -52,7 +52,7 @@ class VocalFatigueAnalysisService:
             return 0.01
         return abs(spm0 - spm1) / (spm0 * dt)
 
-        def analyze_audio_file_12segments(self, audio_data: bytes, user_id: str = None,
+    def analyze_audio_file_12segments(self, audio_data: bytes, user_id: str = None,
                                       save_to_db: bool = False) -> Dict:
         """
         업로드된 음성 데이터를 12구간으로 분할하여 분석
