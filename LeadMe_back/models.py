@@ -17,10 +17,6 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    #비밀번호 틀릴 시 30초 락 코드
-    failed_attempts = Column(Integer, default=0, nullable=False)  # 로그인 실패 횟수
-    lock_until = Column(DateTime, nullable=True)  # 로그인 제한 해제 시간
-
     # CHECK 제약 조건 추가
     __table_args__ = (
         CheckConstraint("age_group IN ('5~12세', '13~19세', '20세 이상')", name="check_age_group"),
