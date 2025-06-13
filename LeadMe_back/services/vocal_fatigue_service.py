@@ -300,21 +300,61 @@ class VocalFatigueAnalysisService:
             return None
 
     def create_analysis_graph(self, segments: List[Dict], model_result: Optional[Dict],
-                              early_spm: float, middle_spm: float, late_spm: float, overall_spm: float) -> Dict:
-        """분석 결과 그래프 생성 (Base64 인코딩)"""
+                          early_spm: float, middle_spm: float, late_spm: float, overall_spm: float) -> Dict:
+        """개선된 음성 피로도 분석 그래프 생성 (Base64 인코딩)"""
         try:
-            # 그래프 생성
-            plt.figure(figsize=(12, 8))
-
+            # 한글 폰트 설정 (시스템에 없으면 기본 폰트 사용)
+            try:
+                plt.rcParams['font.family'] = 'DejaVu Sans'  # 영문 폰트 사용
+            except:
+                pass
+            
+            plt.rcParams['axes.unicode_minus'] = False
+            
+            # 그래프 생성 (큰 단일 그래프)
+            plt.figure(figsize=(14, 8))
+            
             # 유효한 구간 데이터 추출
             valid_segments = [s for s in segments if s["is_valid"]]
             segment_nums = [s["segment_num"] for s in valid_segments]
             spms = [s["spm"] for s in valid_segments]
-
-            # 1. SPM 시계열 플롯
-            plt.subplot(2, 2, 1)
-            plt.plot(segment_nums, spms, 'bo-', linewidth=2, markersize=6, label='실제 SPM')
-
+            
+            # 전체 12구간 표시를 위해 빈 구간도 포함
+            all_segment_nums = list(range(1, 13))
+            all_spms = []
+            
+            for i in range(1, 13):
+                found_segment = next((s for s in segments if s["segment_num"] == i), None)
+                if found_segment and found_segment["is_valid"]:
+                    all_spms.append(found_segment["spm"])
+                else:
+                    # 빈 구간은 주변 값의 평균으로 보간
+                    if i == 1:
+                        all_spms.append(overall_spm)
+                    else:
+                        all_spms.append(all_spms[-1])
+            
+            # 배경 색상 설정 (구간별)
+            ax = plt.gca()
+            
+            # 전기 구간 (1-4) - 연한 파란색
+            ax.axvspan(0.5, 4.5, alpha=0.2, color='lightblue', label='전기 구간')
+            
+            # 중기 구간 (5-8) - 연한 초록색  
+            ax.axvspan(4.5, 8.5, alpha=0.2, color='lightgreen', label='중기 구간')
+            
+            # 말기 구간 (9-12) - 연한 빨간색
+            ax.axvspan(8.5, 12.5, alpha=0.2, color='lightcoral', label='말기 구간')
+            
+            # SPM 시계열 플롯 (굵은 파란색 선)
+            plt.plot(all_segment_nums, all_spms, 'b-', linewidth=3, marker='o', 
+                    markersize=8, markerfacecolor='blue', markeredgecolor='white', 
+                    markeredgewidth=2, label='실제 SPM')
+            
+            # 평균선 표시 (빨간색 수평선)
+            plt.axhline(y=overall_spm, color='red', linestyle='-', linewidth=2, 
+                       alpha=0.8, label=f'전체 평균: {overall_spm:.1f} SPM')
+            
             # 하이퍼볼릭 모델 피팅 결과가 있으면 표시
             if model_result and model_result.get("model_fitted"):
                 times = np.array([s["start_time"] / 60 for s in valid_segments])
@@ -324,75 +364,60 @@ class VocalFatigueAnalysisService:
                     model_result["parameters"]["decline_index"],
                     model_result["parameters"]["shape_parameter"]
                 )
-                plt.plot(segment_nums, model_spms, 'r--', linewidth=2, label='하이퍼볼릭 모델')
-                plt.legend()
-
-            plt.title('구간별 발화 속도 (SPM) 변화')
-            plt.xlabel('구간 번호')
-            plt.ylabel('SPM')
-            plt.grid(True, alpha=0.3)
-
-            # 2. 전기/중기/말기 비교
-            plt.subplot(2, 2, 2)
-            periods = ['전기\n(1-4구간)', '중기\n(5-8구간)', '말기\n(9-12구간)']
-            period_spms = [early_spm, middle_spm, late_spm]
-            colors = ['lightblue', 'lightgreen', 'lightcoral']
-
-            bars = plt.bar(periods, period_spms, color=colors, alpha=0.7)
-            for bar, spm in zip(bars, period_spms):
-                plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 5,
-                         f'{spm:.1f}', ha='center', va='bottom', fontweight='bold')
-
-            plt.title('시기별 평균 SPM 비교')
-            plt.ylabel('SPM')
-            plt.ylim(0, max(period_spms) * 1.2)
-
-            # 3. 음성 구간 비율
-            plt.subplot(2, 2, 3)
-            voiced_percentages = [s["voiced_percentage"] for s in valid_segments]
-            plt.plot(segment_nums, voiced_percentages, 'go-', linewidth=2, markersize=6)
-            plt.title('구간별 음성 비율')
-            plt.xlabel('구간 번호')
-            plt.ylabel('음성 비율 (%)')
-            plt.grid(True, alpha=0.3)
-
-            # 4. 분석 요약 텍스트
-            plt.subplot(2, 2, 4)
-            plt.axis('off')
-
-            summary_text = f"""
-분석 요약
-
-• 전체 평균 SPM: {overall_spm:.1f}
-• 전기 SPM: {early_spm:.1f}
-• 중기 SPM: {middle_spm:.1f}
-• 말기 SPM: {late_spm:.1f}
-
-• 변화율: {((early_spm - late_spm) / early_spm * 100) if early_spm > 0 else 0:.1f}%
-• 유효 구간: {len(valid_segments)}/12개
-            """
-
-            if model_result and model_result.get("model_fitted"):
-                summary_text += f"\n• 모델 R²: {model_result['model_quality']['r_squared']:.3f}"
-
-            plt.text(0.1, 0.9, summary_text, fontsize=11, verticalalignment='top',
-                     bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.8))
-
+                plt.plot(segment_nums, model_spms, 'r--', linewidth=2, alpha=0.7, 
+                        label='하이퍼볼릭 모델')
+            
+            # 그래프 제목 및 라벨
+            plt.title('12구간별 SPM 변화 분석', fontsize=18, fontweight='bold', pad=20)
+            plt.xlabel('구간 번호', fontsize=14)
+            plt.ylabel('SPM (음절/분)', fontsize=14)
+            
+            # 축 설정
+            plt.xlim(0.5, 12.5)
+            plt.xticks(range(1, 13))
+            
+            # Y축 범위를 데이터에 맞게 조정
+            y_min = min(all_spms) - 10
+            y_max = max(all_spms) + 10
+            plt.ylim(y_min, y_max)
+            
+            # 격자 추가
+            plt.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
+            
+            # 범례 추가
+            plt.legend(loc='upper right', fontsize=10)
+            
+            # 분석 결과 텍스트 박스 추가
+            textstr = f'''분석 결과
+    • 전기 평균: {early_spm:.1f} SPM
+    • 중기 평균: {middle_spm:.1f} SPM  
+    • 말기 평균: {late_spm:.1f} SPM
+    • 전체 평균: {overall_spm:.1f} SPM
+    • 변화율: {((early_spm - late_spm) / early_spm * 100) if early_spm > 0 else 0:.1f}%
+    • 유효 구간: {len(valid_segments)}/12개'''
+            
+            # 텍스트 박스 위치 (좌상단)
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
+            plt.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=11,
+                    verticalalignment='top', bbox=props)
+            
+            # 레이아웃 조정
             plt.tight_layout()
-
+            
             # Base64 인코딩
             buffer = io.BytesIO()
-            plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
+            plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight', 
+                       facecolor='white', edgecolor='none')
             buffer.seek(0)
             image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
             plt.close()
-
+            
             return {
                 "status": "success",
                 "image_base64": image_base64,
                 "format": "png"
             }
-
+            
         except Exception as e:
             logger.error(f"그래프 생성 실패: {e}")
-            return {"status": "error", "error": str(e)} 
+            return {"status": "error", "error": str(e)}
