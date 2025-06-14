@@ -15,6 +15,7 @@ import base64
 import warnings
 import matplotlib.pyplot as plt
 import io
+import soundfile as sf
 
 # 기존 LeadMe 모듈 임포트
 from services.openai_stt import OpenAISTTService
@@ -163,7 +164,7 @@ class VocalFatigueAnalysisService:
         except Exception as e:
             logger.error(f"분석 실패: {e}")
             return {"status": "error", "error": str(e)}
-        
+
         finally:
             # 임시 파일 정리
             if temp_file_path and os.path.exists(temp_file_path):
@@ -187,8 +188,8 @@ class VocalFatigueAnalysisService:
             # STT를 통한 음절 수 계산
             temp_audio_path = f"temp_segment_{segment_num}.wav"
             try:
-                librosa.output.write_wav(temp_audio_path, segment_audio, sr)
-                stt_result = self.stt_service.transcribe_audio(temp_audio_path)
+                sf.write(temp_audio_path, segment_audio, sr)
+                stt_result = self.stt_service.speech_to_text(temp_audio_path)
 
                 if stt_result["status"] == "success":
                     text = stt_result["text"]
@@ -300,124 +301,159 @@ class VocalFatigueAnalysisService:
             return None
 
     def create_analysis_graph(self, segments: List[Dict], model_result: Optional[Dict],
-                          early_spm: float, middle_spm: float, late_spm: float, overall_spm: float) -> Dict:
+                              early_spm: float, middle_spm: float, late_spm: float, overall_spm: float) -> Dict:
         """개선된 음성 피로도 분석 그래프 생성 (Base64 인코딩)"""
         try:
-            # 한글 폰트 설정 (시스템에 없으면 기본 폰트 사용)
-            try:
-                plt.rcParams['font.family'] = 'DejaVu Sans'  # 영문 폰트 사용
-            except:
-                pass
-            
-            plt.rcParams['axes.unicode_minus'] = False
-            
+            # 한글 폰트 설정 함수
+            def set_korean_font():
+                """시스템에 설치된 한글 폰트 자동 감지 및 설정"""
+                import matplotlib.font_manager as fm
+
+                # 시스템 폰트 목록 가져오기
+                font_list = [font.name for font in fm.fontManager.ttflist]
+
+                # 한글 폰트 우선순위
+                korean_fonts = ['Malgun Gothic', 'NanumGothic', 'AppleGothic', 'Dotum', 'Gulim']
+
+                for font in korean_fonts:
+                    if font in font_list:
+                        plt.rcParams['font.family'] = font
+                        logger.info(f"한글 폰트 설정: {font}")
+                        break
+                else:
+                    logger.warning("한글 폰트 없음 - 기본 폰트 사용")
+
+                plt.rcParams['axes.unicode_minus'] = False
+
+            # 한글 폰트 설정 적용
+            set_korean_font()
+
             # 그래프 생성 (큰 단일 그래프)
             plt.figure(figsize=(14, 8))
-            
-            # 유효한 구간 데이터 추출
-            valid_segments = [s for s in segments if s["is_valid"]]
-            segment_nums = [s["segment_num"] for s in valid_segments]
-            spms = [s["spm"] for s in valid_segments]
-            
-            # 전체 12구간 표시를 위해 빈 구간도 포함
-            all_segment_nums = list(range(1, 13))
-            all_spms = []
-            
-            for i in range(1, 13):
-                found_segment = next((s for s in segments if s["segment_num"] == i), None)
-                if found_segment and found_segment["is_valid"]:
-                    all_spms.append(found_segment["spm"])
-                else:
-                    # 빈 구간은 주변 값의 평균으로 보간
-                    if i == 1:
-                        all_spms.append(overall_spm)
-                    else:
-                        all_spms.append(all_spms[-1])
-            
-            # 배경 색상 설정 (구간별)
+
+            # 유효한 구간 데이터 추출 (키 이름 호환성 확보)
+            valid_segments = []
+            for s in segments:
+                if s.get("is_valid", False):
+                    # segment_number 또는 segment_num 키 확인
+                    segment_num = s.get("segment_number") or s.get("segment_num")
+                    if segment_num is not None:
+                        valid_segments.append({
+                            "segment_number": segment_num,
+                            "spm": s.get("spm", 0),
+                            "is_valid": s.get("is_valid", False)
+                        })
+
+            if not valid_segments:
+                logger.warning("유효한 구간이 없습니다.")
+                return {"status": "error", "error": "유효한 구간이 없습니다."}
+
+            # 구간 번호와 SPM 값 추출
+            segment_nums = [s["segment_number"] for s in valid_segments]
+            all_spms = [s["spm"] for s in valid_segments]
+
+            # 메인 그래프 생성
             ax = plt.gca()
-            
-            # 전기 구간 (1-4) - 연한 파란색
-            ax.axvspan(0.5, 4.5, alpha=0.2, color='lightblue', label='전기 구간')
-            
-            # 중기 구간 (5-8) - 연한 초록색  
-            ax.axvspan(4.5, 8.5, alpha=0.2, color='lightgreen', label='중기 구간')
-            
-            # 말기 구간 (9-12) - 연한 빨간색
-            ax.axvspan(8.5, 12.5, alpha=0.2, color='lightcoral', label='말기 구간')
-            
-            # SPM 시계열 플롯 (굵은 파란색 선)
-            plt.plot(all_segment_nums, all_spms, 'b-', linewidth=3, marker='o', 
-                    markersize=8, markerfacecolor='blue', markeredgecolor='white', 
-                    markeredgewidth=2, label='실제 SPM')
-            
-            # 평균선 표시 (빨간색 수평선)
-            plt.axhline(y=overall_spm, color='red', linestyle='-', linewidth=2, 
-                       alpha=0.8, label=f'전체 평균: {overall_spm:.1f} SPM')
-            
-            # 하이퍼볼릭 모델 피팅 결과가 있으면 표시
+
+            # 전기/중기/말기 구간 배경색으로 표시
+            ax.axvspan(0.5, 4.5, alpha=0.15, color='lightblue', label='전기 구간 (1-4)')
+            ax.axvspan(4.5, 8.5, alpha=0.15, color='lightgreen', label='중기 구간 (5-8)')
+            ax.axvspan(8.5, 12.5, alpha=0.15, color='lightcoral', label='말기 구간 (9-12)')
+
+            # SPM 데이터 플롯
+            ax.plot(segment_nums, all_spms, 'bo-', markersize=8, linewidth=3,
+                    label='관측된 SPM', markerfacecolor='lightblue', markeredgecolor='blue')
+
+            # 하이퍼볼릭 모델 라인 추가 (있는 경우)
             if model_result and model_result.get("model_fitted"):
-                times = np.array([s["start_time"] / 60 for s in valid_segments])
-                model_spms = self.hyperbolic_decline_model(
-                    times,
-                    model_result["parameters"]["spm0"],
-                    model_result["parameters"]["decline_index"],
-                    model_result["parameters"]["shape_parameter"]
-                )
-                plt.plot(segment_nums, model_spms, 'r--', linewidth=2, alpha=0.7, 
-                        label='하이퍼볼릭 모델')
-            
-            # 그래프 제목 및 라벨
+                try:
+                    # 모델 예측값 계산
+                    times = np.array(segment_nums)
+                    params = model_result["parameters"]
+                    spm0 = params["spm0"]
+                    di = params["decline_index"]
+                    b = params["shape_parameter"]
+
+                    # 더 부드러운 곡선을 위해 세밀한 시간 포인트 생성
+                    smooth_times = np.linspace(min(segment_nums), max(segment_nums), 100)
+                    model_spms = self.hyperbolic_decline_model(smooth_times, spm0, di, b)
+
+                    ax.plot(smooth_times, model_spms, 'r--', linewidth=2, alpha=0.7,
+                            label='하이퍼볼릭 모델')
+                except Exception as e:
+                    logger.warning(f"모델 곡선 그리기 실패: {e}")
+
+            # 그래프 제목 및 라벨 (한글)
             plt.title('12구간별 SPM 변화 분석', fontsize=18, fontweight='bold', pad=20)
             plt.xlabel('구간 번호', fontsize=14)
             plt.ylabel('SPM (음절/분)', fontsize=14)
-            
+
             # 축 설정
             plt.xlim(0.5, 12.5)
             plt.xticks(range(1, 13))
-            
+
             # Y축 범위를 데이터에 맞게 조정
-            y_min = min(all_spms) - 10
-            y_max = max(all_spms) + 10
-            plt.ylim(y_min, y_max)
-            
+            if all_spms:
+                y_min = max(0, min(all_spms) - 10)
+                y_max = max(all_spms) + 10
+                plt.ylim(y_min, y_max)
+
             # 격자 추가
             plt.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
-            
+
             # 범례 추가
             plt.legend(loc='upper right', fontsize=10)
-            
-            # 분석 결과 텍스트 박스 추가
+
+            # 분석 결과 텍스트 박스 추가 (한글)
+            decline_rate = ((early_spm - late_spm) / early_spm * 100) if early_spm > 0 else 0
+            fatigue_status = "피로 감지됨" if decline_rate > 5 else "안정적 발화"
+
             textstr = f'''분석 결과
-    • 전기 평균: {early_spm:.1f} SPM
-    • 중기 평균: {middle_spm:.1f} SPM  
-    • 말기 평균: {late_spm:.1f} SPM
-    • 전체 평균: {overall_spm:.1f} SPM
-    • 변화율: {((early_spm - late_spm) / early_spm * 100) if early_spm > 0 else 0:.1f}%
-    • 유효 구간: {len(valid_segments)}/12개'''
-            
+    - 전기 평균: {early_spm:.1f} SPM
+    - 중기 평균: {middle_spm:.1f} SPM  
+    - 말기 평균: {late_spm:.1f} SPM
+    - 전체 평균: {overall_spm:.1f} SPM
+    - 변화율: {decline_rate:.1f}%
+    - 유효 구간: {len(valid_segments)}/12개
+    - 결과: {fatigue_status}'''
+
             # 텍스트 박스 위치 (좌상단)
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.8)
+            props = dict(boxstyle='round,pad=0.8', facecolor='wheat', alpha=0.9, edgecolor='gray')
             plt.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=11,
-                    verticalalignment='top', bbox=props)
-            
+                     verticalalignment='top', bbox=props)
+
+            # 모델 정보 추가 (우하단)
+            if model_result and model_result.get("model_fitted"):
+                model_params = model_result["parameters"]
+                model_quality = model_result["model_quality"]
+
+                model_textstr = f'''모델 정보
+    - 초기 SPM: {model_params["spm0"]:.1f}
+    - 감소 지수: {model_params["decline_index"]:.4f}
+    - 형태 매개변수: {model_params["shape_parameter"]:.2f}
+    - R² 값: {model_quality["r_squared"]:.3f}'''
+
+                model_props = dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.8)
+                plt.text(0.98, 0.02, model_textstr, transform=ax.transAxes, fontsize=9,
+                         verticalalignment='bottom', horizontalalignment='right', bbox=model_props)
+
             # 레이아웃 조정
             plt.tight_layout()
-            
+
             # Base64 인코딩
             buffer = io.BytesIO()
-            plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight', 
-                       facecolor='white', edgecolor='none')
+            plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight',
+                        facecolor='white', edgecolor='none')
             buffer.seek(0)
             image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
             plt.close()
-            
+
             return {
                 "status": "success",
                 "image_base64": image_base64,
                 "format": "png"
             }
-            
+
         except Exception as e:
             logger.error(f"그래프 생성 실패: {e}")
             return {"status": "error", "error": str(e)}
