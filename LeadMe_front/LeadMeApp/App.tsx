@@ -2,6 +2,7 @@ import React, {useEffect} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BackHandler } from 'react-native';
+import {navigationRef} from './src/config/axiosInstance';
 import SignUpScreen from './src/screen/SignUp/SignUpScreen';
 import LoginScreen from './src/screen/Login/LoginScreen';
 import FindIDScreen from './src/screen/FindID/FindIDScreen';
@@ -41,7 +42,7 @@ export default function App() {
   }, []);
   return (
   <FavoriteProvider>
-    <NavigationContainer>
+    <NavigationContainer ref = {navigationRef}>
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
