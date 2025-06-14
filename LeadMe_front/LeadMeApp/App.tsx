@@ -21,6 +21,7 @@ import {FavoriteProvider, FavoriteWordsScreen} from './src/screen/FavoriteWordsS
 import RandomWordScreen from './src/screen/RandomWordScreen/RandomWordScreen';
 import SpeedListScreen from './src/screen/SpeedList/SpeedListScreen';
 import PreExperience from './src/screen/PreExperience/PreExperienceScreen';
+import HyperScreen from './src/screen/Hyperbolic/HyperScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -60,7 +61,8 @@ export default function App() {
         <Stack.Screen name="FavoriteWordsScreen" component={FavoriteWordsScreen} options={{headerShown: false}} />
         <Stack.Screen name="RandomWordScreen" component={RandomWordScreen} options={{headerShown: false}} />
         <Stack.Screen name="SpeedListScreen" component={SpeedListScreen} options={{headerShown: false}} />
-        <Stack.Screen name="PreExperience" component={PreExperience} options={{headerShown: false}} />        
+        <Stack.Screen name="PreExperience" component={PreExperience} options={{headerShown: false}} />    
+        <Stack.Screen name="HyperScreen" component={HyperScreen} options={{headerShown:false}} />    
       </Stack.Navigator>
     </NavigationContainer>
   </FavoriteProvider>
