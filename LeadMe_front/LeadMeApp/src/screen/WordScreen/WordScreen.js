@@ -22,7 +22,7 @@ const WordScreen = ({ navigation, route }) => {
     favoriteId: null,
   });
 
-  // 전체 단어 목록을 불러옴 (즐겨찾기에서 진입하지 않은 경우)
+  // 전체 단어 목록을 불러옴 (즐겨찾기에서 진입하지 않은 경우에만)
   const fetchAllWords = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
@@ -59,16 +59,15 @@ const WordScreen = ({ navigation, route }) => {
     fetchWord(wordId);
   }, [wordId]);
 
-  // 전체 단어 목록 fetch
   useEffect(() => {
     if (!passedFavorites) {
       fetchAllWords();
     }
   }, []);
 
-  // currentIndex 계산 (전체 단어 기준)
+  // ✅ 즐겨찾기에서 진입한 경우 currentIndex 유지하도록 분기 추가
   useEffect(() => {
-    if (!passedFavorites && allWords.length > 0) {
+    if (!passedFavorites && allWords.length > 0 && currentIndex === null) {
       const index = allWords.findIndex(word => word.word_id === wordId);
       setCurrentIndex(index);
     }
@@ -140,6 +139,8 @@ const WordScreen = ({ navigation, route }) => {
     navigation.navigate('WordSentence', {
       word: wordData.word,
       wordId: wordId,
+      favorites: favorites?.length ? favorites : null,
+      currentIndex: currentIndex,
     });
   };
 
