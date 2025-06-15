@@ -7,6 +7,7 @@ import os
 import tempfile
 import shutil
 import librosa
+import uuid
 from pydub import AudioSegment
 from datetime import datetime, date
 import logging
@@ -363,15 +364,44 @@ async def analyze_vocal_fatigue(
     그래프 이미지 파일을 생성하고 파일 경로를 반환합니다.
     """
     logger.info(f"[START] analyze_vocal_fatigue called - filename: {file.filename}, user_id: {current_user.user_id}")
-
+    file_ext = os.path.splitext(file.filename)[-1].lower()
     # 파일 확장자 검증
-    if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg')):
+    if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg', "mp4")):
         logger.warning(f"지원되지 않는 파일 형식: {file.filename}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="지원되지 않는 파일 형식입니다. .wav, .mp3, .m4a, .ogg 형식만 허용됩니다."
+            detail="지원되지 않는 파일 형식입니다. .wav, .mp3, .m4a, .ogg, .mp4 형식만 허용됩니다."
         )
+    
+    # 임시 파일 저장
+    temp_input_path = f"temp_input_{uuid.uuid4()}{file_ext}"
+    with open(temp_input_path, "wb") as f:
+        f.write(await file.read())
 
+    # mp4 또는 m4a일 경우 변환
+    if file_ext in (".mp4", ".m4a"):
+        converted_wav_path = f"temp_converted_{uuid.uuid4()}.wav"
+        try:
+            convert_m4a_to_wav(temp_input_path, converted_wav_path)
+            inspect_audio_file(converted_wav_path)
+        except Exception as e:
+            logger.error(f"변환 실패: {str(e)}")
+            raise HTTPException(status_code=500, detail="파일 변환 중 오류가 발생했습니다.")
+    
+        with open(converted_wav_path, "rb") as f:
+            audio_data = f.read()
+
+        # 임시 파일 삭제
+        os.remove(temp_input_path)
+        os.remove(converted_wav_path)
+
+    else:
+        # mp3, wav 등은 그대로 사용
+        with open(temp_input_path, "rb") as f:
+            audio_data = f.read()
+        os.remove(temp_input_path)
+    
+    
     try:
         # 파일 데이터 읽기
         audio_data = await file.read()
