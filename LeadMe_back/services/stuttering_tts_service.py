@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 # 내부 모듈 임포트
-from services.word_based_speech_trainer import get_sentence_for_age_group
+from services.word_based_speech_trainer import get_sentence_for_word_and_age
 
 # 환경 변수 로드
 load_dotenv()
