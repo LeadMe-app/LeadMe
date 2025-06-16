@@ -365,10 +365,6 @@ async def analyze_vocal_fatigue(
     """
     logger.info(f"[START] analyze_vocal_fatigue called - filename: {file.filename}, user_id: {current_user.user_id}")
 
-    
-    return {"filename": file.filename} #테스트 코드
-
-
     file_ext = os.path.splitext(file.filename)[-1].lower()
     # 파일 확장자 검증
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg', "mp4")):
