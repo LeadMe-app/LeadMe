@@ -14,6 +14,7 @@ import pandas as pd
 import base64
 import warnings
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 import io
 import soundfile as sf
 
@@ -25,8 +26,10 @@ warnings.filterwarnings('ignore')
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-# 한글 폰트 설정
-plt.rcParams['font.family'] = 'NanumGothic'
+# 한글 폰트 경로 등록
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+plt.rcParams['font.family'] = font_prop.get_name()
 plt.rcParams['axes.unicode_minus'] = False
 
 
@@ -384,9 +387,10 @@ class VocalFatigueAnalysisService:
                     logger.warning(f"모델 곡선 그리기 실패: {e}")
 
             # 그래프 제목 및 라벨 (한글)
-            plt.title('12구간별 SPM 변화 분석', fontsize=18, fontweight='bold', pad=20)
-            plt.xlabel('구간 번호', fontsize=14)
-            plt.ylabel('SPM (음절/분)', fontsize=14)
+            plt.title('12구간별 SPM 변화 분석', fontsize=18, fontweight='bold', pad=20, fontproperties=font_prop)
+            plt.xlabel('구간 번호', fontsize=14, fontproperties=font_prop)
+            plt.ylabel('SPM (음절/분)', fontsize=14, fontproperties=font_prop)
+
 
             # 축 설정
             plt.xlim(0.5, 12.5)
