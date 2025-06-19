@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 import matplotlib.pyplot as plt
 # 기본 폰트를 영문 폰트로 설정
-plt.rcParams['font.family'] = 'Malgun Gothic'  # 또는 'NanumGothic'
+plt.rcParams['font.family'] = 'NanumGothic'
 plt.rcParams['axes.unicode_minus'] = False
 
 
