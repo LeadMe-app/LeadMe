@@ -366,55 +366,57 @@ async def analyze_vocal_fatigue(
     logger.info(f"[START] analyze_vocal_fatigue called - filename: {file.filename}, user_id: {current_user.user_id}")
 
     file_ext = os.path.splitext(file.filename)[-1].lower()
-    # 파일 확장자 검증
     if not file.filename.lower().endswith(('.wav', '.mp3', '.m4a', '.ogg', "mp4")):
         logger.warning(f"지원되지 않는 파일 형식: {file.filename}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="지원되지 않는 파일 형식입니다. .wav, .mp3, .m4a, .ogg, .mp4 형식만 허용됩니다."
         )
-    
-    # 임시 파일 저장
+
+    # 1. 파일 내용을 한 번만 읽고 변수에 저장
+    file_bytes = await file.read()
+
+    if len(file_bytes) == 0:
+        logger.error("업로드된 파일이 비어 있습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="업로드된 오디오 파일이 비어 있습니다."
+        )
+
+    # 2. 임시 파일로 저장
     temp_input_path = f"temp_input_{uuid.uuid4()}{file_ext}"
     with open(temp_input_path, "wb") as f:
-        f.write(await file.read())
+        f.write(file_bytes)
 
-    # mp4 또는 m4a일 경우 변환
+    # 3. 확장자에 따라 처리
     if file_ext in (".mp4", ".m4a"):
         converted_wav_path = f"temp_converted_{uuid.uuid4()}.wav"
         try:
             convert_m4a_to_wav(temp_input_path, converted_wav_path)
             inspect_audio_file(converted_wav_path)
+
+            with open(converted_wav_path, "rb") as f:
+                audio_data = f.read()
+
+            os.remove(temp_input_path)
+            os.remove(converted_wav_path)
+
         except Exception as e:
             logger.error(f"변환 실패: {str(e)}")
             raise HTTPException(status_code=500, detail="파일 변환 중 오류가 발생했습니다.")
-    
-        with open(converted_wav_path, "rb") as f:
-            audio_data = f.read()
-
-        # 임시 파일 삭제
-        os.remove(temp_input_path)
-        os.remove(converted_wav_path)
-
     else:
-        # mp3, wav 등은 그대로 사용
-        with open(temp_input_path, "rb") as f:
-            audio_data = f.read()
+        audio_data = file_bytes
         os.remove(temp_input_path)
-    
-    
-    try:
-        # 파일 데이터 읽기
-        audio_data = await file.read()
-        user_id = current_user.user_id
-        
-        logger.info(f"음성 파일 크기: {len(audio_data)} bytes")
 
-        # 음성 피로도 분석 실행 (DB 저장 안함)
+    try:
+        user_id = current_user.user_id
+
+        logger.info(f"음성 파일 크기: {len(audio_data)} bytes")
         logger.info("음성 피로도 분석 시작")
+
         analysis_result = vocal_fatigue_service.analyze_audio_file_12segments(
             audio_data=audio_data,
-            user_id=None,  # DB 저장하지 않음
+            user_id=None,
             save_to_db=False
         )
 
@@ -424,13 +426,11 @@ async def analyze_vocal_fatigue(
                 detail=analysis_result.get("error", "분석 중 오류가 발생했습니다.")
             )
 
-        # 그래프 이미지 파일 저장
+        # 그래프 이미지 저장 처리
         if analysis_result.get("graph_available"):
-            # static/graphs 디렉토리 생성
             graph_dir = "static/graphs"
             os.makedirs(graph_dir, exist_ok=True)
-            
-            # 해당 사용자의 기존 그래프 파일들 삭제
+
             import glob
             existing_files = glob.glob(os.path.join(graph_dir, f"vocal_fatigue_analysis_{user_id}_*.png"))
             for old_file in existing_files:
@@ -439,21 +439,16 @@ async def analyze_vocal_fatigue(
                     logger.info(f"기존 그래프 파일 삭제: {old_file}")
                 except Exception as e:
                     logger.warning(f"기존 파일 삭제 실패: {old_file}, 오류: {e}")
-            
-            # 고정된 파일명으로 새 그래프 파일 생성
+
             graph_filename = f"vocal_fatigue_analysis_{user_id}.png"
             graph_path = os.path.join(graph_dir, graph_filename)
-            
-            # Base64 이미지를 파일로 저장
+
             import base64
             if analysis_result.get("graph_image"):
                 image_data = base64.b64decode(analysis_result["graph_image"])
                 with open(graph_path, "wb") as f:
                     f.write(image_data)
-                
-                # 웹에서 접근 가능한 URL 생성
                 graph_url = f"/static/graphs/{graph_filename}"
-                
                 logger.info(f"그래프 이미지 저장 완료: {graph_path}")
             else:
                 graph_path = None
@@ -462,7 +457,7 @@ async def analyze_vocal_fatigue(
             graph_path = None
             graph_url = None
 
-        # 반환 데이터 구성
+        # 최종 결과 반환
         result = {
             "status": "success",
             "filename": file.filename,
@@ -472,16 +467,14 @@ async def analyze_vocal_fatigue(
             "graph_url": graph_url,
             "graph_available": analysis_result.get("graph_available", False)
         }
-        
-        # 모델 결과가 있으면 추가
+
         if "parameters" in analysis_result:
             result["model_parameters"] = analysis_result["parameters"]
         if "model_quality" in analysis_result:
             result["model_quality"] = analysis_result["model_quality"]
-        
+
         logger.info("[END] analyze_vocal_fatigue 성공적으로 종료")
         return JSONResponse(status_code=201, content=result)
-     
 
     except HTTPException:
         raise
