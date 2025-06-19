@@ -26,7 +26,7 @@ warnings.filterwarnings('ignore')
 logger = logging.getLogger(__name__)
 
 # 한글 폰트 설정
-plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['font.family'] = 'NanumGothic'
 plt.rcParams['axes.unicode_minus'] = False
 
 
