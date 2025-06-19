@@ -307,30 +307,6 @@ class VocalFatigueAnalysisService:
                               early_spm: float, middle_spm: float, late_spm: float, overall_spm: float) -> Dict:
         """개선된 음성 피로도 분석 그래프 생성 (Base64 인코딩)"""
         try:
-            # 한글 폰트 설정 함수
-            def set_korean_font():
-                """시스템에 설치된 한글 폰트 자동 감지 및 설정"""
-                import matplotlib.font_manager as fm
-
-                # 시스템 폰트 목록 가져오기
-                font_list = [font.name for font in fm.fontManager.ttflist]
-
-                # 한글 폰트 우선순위
-                korean_fonts = ['Malgun Gothic', 'NanumGothic', 'AppleGothic', 'Dotum', 'Gulim']
-
-                for font in korean_fonts:
-                    if font in font_list:
-                        plt.rcParams['font.family'] = font
-                        logger.info(f"한글 폰트 설정: {font}")
-                        break
-                else:
-                    logger.warning("한글 폰트 없음 - 기본 폰트 사용")
-
-                plt.rcParams['axes.unicode_minus'] = False
-
-            # 한글 폰트 설정 적용
-            set_korean_font()
-
             # 그래프 생성 (큰 단일 그래프)
             plt.figure(figsize=(14, 8))
 
@@ -424,7 +400,7 @@ class VocalFatigueAnalysisService:
             # 텍스트 박스 위치 (좌상단)
             props = dict(boxstyle='round,pad=0.8', facecolor='wheat', alpha=0.9, edgecolor='gray')
             plt.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=11,
-                     verticalalignment='top', bbox=props)
+                     verticalalignment='top', bbox=props, fontproperties=font_prop)
 
             # 모델 정보 추가 (우하단)
             if model_result and model_result.get("model_fitted"):
@@ -439,7 +415,7 @@ class VocalFatigueAnalysisService:
 
                 model_props = dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.8)
                 plt.text(0.98, 0.02, model_textstr, transform=ax.transAxes, fontsize=9,
-                         verticalalignment='bottom', horizontalalignment='right', bbox=model_props)
+                         verticalalignment='bottom', horizontalalignment='right', bbox=model_props, fontproperties=font_prop)
 
             # 레이아웃 조정
             plt.tight_layout()
