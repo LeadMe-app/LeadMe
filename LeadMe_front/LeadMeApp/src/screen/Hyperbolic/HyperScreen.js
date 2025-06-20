@@ -118,6 +118,7 @@ const HyperScreen = () => {
       setAnalysisResult(data);
 
       if (data.graph_url) {
+        console.log('graphUrl:', graphUrl);
         setGraphUrl(data.graph_url.startsWith('http') ? data.graph_url : `http://3.36.186.136:8000${data.graph_url}`);
       } else {
         setGraphUrl(null);
@@ -198,12 +199,20 @@ const HyperScreen = () => {
         )}
       </View>
 
+      {/* 분석중 안내문구 */}
+      {loading && (
+        <View style={{ marginVertical: 10 }}>
+          <Text style={{ color: 'red', fontWeight: 'bold', textAlign: 'center' }}>
+            ⚠️ 분석중입니다. 화면을 나가면 분석이 종료됩니다. 잠시만 기다려주세요.
+          </Text>
+        </View>
+      )}
       {loading && <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 20 }} />}
 
       {graphUrl && (
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: graphUrl }}
+            source={{ uri: graphUrl, cache: 'reload' }} //cache 때문에 한글 깨짐
             style={styles.graphImage}
             resizeMode="contain"
             onError={() => Alert.alert('이미지 오류', '그래프를 불러오지 못했습니다.')}
