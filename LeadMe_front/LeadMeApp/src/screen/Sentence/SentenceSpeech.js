@@ -354,8 +354,8 @@ const SentenceSpeech = ({ navigation }) => {
           onPress={() => setModalVisible(true)}
           style={{
             backgroundColor: '#F8D7A9',
-            paddingHorizontal: 12,
-            paddingVertical: 6,
+            paddingHorizontal: 15,
+            paddingVertical: 10,
             borderRadius: 6,
           }}
         >

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
 import { styles } from './styles';
 import axiosInstance from '../../config/axiosInstance'; // axios 설정이 들어간 파일
 import Logo from '../../components/Logo';
@@ -61,17 +61,28 @@ const WordList = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Logo />
-      <ScrollView>
-        {wordList.map((wordItem, index) => (
+      <FlatList
+        data={wordList}
+        keyExtractor={(item) => item.word_id.toString()}
+        numColumns={2} // 바둑판: 2열
+        contentContainerStyle={{ paddingBottom: 100 }} // 버튼 영역 피하기
+        columnWrapperStyle={{ justifyContent: 'space-around' }} // 좌우 정렬
+        renderItem={({ item, index }) => (
           <TouchableOpacity
-            key={wordItem.word_id}
-            style={[styles.optionBox, { backgroundColor: colors[index % colors.length] }]}
-            onPress={() => navigation.navigate('WordScreen',{ wordId: wordItem.word_id })}
+            style={[
+              styles.optionBox,
+              {
+                backgroundColor: colors[index % colors.length],
+                width: '45%',
+                marginVertical: 10,
+              },
+            ]}
+            onPress={() => navigation.navigate('WordScreen', { wordId: item.word_id })}
           >
-            <Text style={styles.optionTitle}>{wordItem.word}</Text>
+            <Text style={styles.optionTitle}>{item.word}</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        )}
+      />
       <View>
         <BackButton style={{ position: 'absolute', bottom: 20, alignSelf: 'center' }} />
       </View>

@@ -66,14 +66,7 @@ const FreeSpeechScreen = ({ navigation }) => {
 
   const sendRecordingToServer = async (filePath) => {
     try {
-      let uri = filePath;
-
-      if (uri.startsWith('file:////')) {
-        uri = uri.replace('file:////', 'file:///');
-      }
-      if (!uri.startsWith('file://')) {
-        uri = `file://${uri}`;
-      }
+      const uri = Platform.OS === 'android' ? `file://${filePath}` : filePath;
 
       const mimeType = 'audio/m4a';
       const fileName = 'recording.m4a';
@@ -89,7 +82,7 @@ const FreeSpeechScreen = ({ navigation }) => {
 
       const response = await axiosInstance.post('/api/speed/analyze-audio-file/', formData, {
         headers: {
-          //'Content-Type': 'multipart/form-data',
+          'Content-Type': 'multipart/form-data', //여기서는 이게 없으면 오류 
           'Authorization': `Bearer ${token}`,
         },
       });
