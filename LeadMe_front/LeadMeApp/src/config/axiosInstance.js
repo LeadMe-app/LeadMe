@@ -18,8 +18,9 @@ axiosInstance.interceptors.response.use(
   response => response,
   async error => {
     const status = error.response?.status;
-
-    if (status === 401){
+    const requestUrl = error.config?.url || '';
+    
+    if (status === 401 && !requestUrl.includes('/api/auth/login')){
       await AsyncStorage.multiRemove(['access_token', 'userId', 'age_group', 'username']);
 
       Alert.alert('세션 만료', '다른 기기에서 로그인되어 로그아웃되었습니다.');

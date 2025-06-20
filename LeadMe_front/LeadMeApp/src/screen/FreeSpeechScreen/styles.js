@@ -77,7 +77,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avgSpmText: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#333',
   },
 });

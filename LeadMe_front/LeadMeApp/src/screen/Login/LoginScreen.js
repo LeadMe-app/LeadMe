@@ -115,18 +115,33 @@ const LoginScreen = ({ navigation }) => {
     } catch (err) {
       console.error('로그인 실패:', err.response?.data || err);
 
-      // 실패 카운트 증가.
+      const statusCode = err.response?.status;
+      const detailMessage = err.response?.data?.detail;
+
+      if (statusCode === 429) {
+        // ⏳ 백엔드에서 잠금 걸림
+        setIsLocked(true);
+        setLockEndTime(Date.now() + 30000); // 서버에서 보내준 시간을 활용하면 더 정확
+        setErrors({ general: detailMessage || '로그인 제한 중입니다.' });
+        return;
+      }
+      
       const newCount = failedAttempts + 1;
       setFailedAttempts(newCount);
 
-      // 5회 실패 시 30초 잠금.
-      if (newCount >= 5){
+      if (newCount >= 5) {
         const lockUntil = Date.now() + 30000;
         setIsLocked(true);
         setLockEndTime(lockUntil);
-        setErrors({general: '로그인 5회 실패 30초간 잠금됩니다.'});
-      } else{
-        setErrors({general: `로그인에 실패했습니다. 남은 기회 ${5 - newCount}회`});
+        setErrors({
+          general: '로그인 5회 실패. 30초간 잠금됩니다.',
+        });
+      } else {
+        setErrors({
+          general: detailMessage
+            ? detailMessage // ✅ 서버가 보낸 메시지 사용
+            : `로그인에 실패했습니다. 남은 기회 ${5 - newCount}회`,
+        });
       }
     }
   };

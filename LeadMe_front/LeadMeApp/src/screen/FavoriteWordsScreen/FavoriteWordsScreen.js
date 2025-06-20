@@ -23,7 +23,8 @@ export const FavoriteProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` },
         params: { user_id: userId },
       });
-      setFavorite(res.data);
+      const favoritesData = Array.isArray(res.data) ? res.data : res.data.favorites || [];
+      setFavorite(favoritesData);
     } catch (error) {
       console.error('즐겨찾기 불러오기 실패:', error);
       Alert.alert('오류', '즐겨찾기를 불러오지 못했습니다.');
@@ -32,6 +33,11 @@ export const FavoriteProvider = ({ children }) => {
 
   const fetchWords = async () => {
     try {
+      if (favorites.length === 0) {
+        setWords([]); // 빈 배열 처리
+        setLoading(false);
+        return;
+      } 
       const wordIds = favorites.map((fav) => fav.word_id);
       const promises = wordIds.map((wordId) => fetchWord(wordId));
       const wordList = await Promise.all(promises);
@@ -66,7 +72,7 @@ export const FavoriteProvider = ({ children }) => {
       const res = await axiosInstance.get(`/api/words/${wordId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return res.data.word;
+      return res.data.word || res.data || null;
     } catch (error) {
       console.error('단어 불러오기 실패:', error);
       Alert.alert('오류', '단어를 불러오지 못했습니다.');

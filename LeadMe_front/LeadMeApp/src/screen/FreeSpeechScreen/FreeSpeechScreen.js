@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
-import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import AudioRecorderPlayer, {
+  AudioEncoderAndroidType,
+  AudioSourceAndroidType,
+  OutputFormatAndroidType,
+} from 'react-native-audio-recorder-player';
 import Sound from 'react-native-sound';
+import RNFetchBlob from 'rn-fetch-blob'; // 추가
 import axiosInstance from '../../config/axiosInstance';
 import { styles } from './styles';
 import Logo from '../../components/Logo';
@@ -22,30 +27,56 @@ const FreeSpeechScreen = ({ navigation }) => {
   
   const handleRecordPress = async () => {
     setIsRecording(true);
-    const result = await audioRecorderPlayer.startRecorder();
-    setRecordedFilePath(result);
-    console.log('녹음 시작:', result); // 눌렀을때 속도, 피드백 초기화
+    setSpeechSpeed(null);
+    setFeedback('');
+    
+    try {
+      const dirs = RNFetchBlob.fs.dirs;
+      const path = Platform.select({
+        android: `${dirs.CacheDir}/recording.m4a`,
+      });
+
+      const audioSet = {
+        AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
+        AudioSourceAndroid: AudioSourceAndroidType.MIC,
+        OutputFormatAndroid: OutputFormatAndroidType.MPEG_4,
+      };
+
+      const result = await audioRecorderPlayer.startRecorder(path, audioSet);
+      setRecordedFilePath(result);
+      console.log('녹음 시작:', result);
+    } catch (error) {
+      console.error('녹음 오류:', error);
+      setIsRecording(false);
+    }
   };
 
   const handleStopPress = async () => {
-    const result = await audioRecorderPlayer.stopRecorder();
-    setIsRecording(false);
-    console.log('녹음 종료:', result);
-    setRecordedFilePath(result);
-    await sendRecordingToServer(result);
+    try {
+      const result = await audioRecorderPlayer.stopRecorder();
+      setIsRecording(false);
+      setRecordedFilePath(result);
+      console.log('녹음 종료:', result);
+      await sendRecordingToServer(result);
+    } catch (error) {
+      console.error('정지 오류:', error);
+      setIsRecording(false);
+    }
   };
 
   const sendRecordingToServer = async (filePath) => {
     try {
-      const uri = Platform.OS === 'android' ? `file://${filePath}` : filePath;
+      let uri = filePath;
+
+      if (uri.startsWith('file:////')) {
+        uri = uri.replace('file:////', 'file:///');
+      }
+      if (!uri.startsWith('file://')) {
+        uri = `file://${uri}`;
+      }
+
       const mimeType = 'audio/m4a';
       const fileName = 'recording.m4a';
-
-      console.log('업로드 준비');
-      console.log('filePath:', filePath);
-      console.log('uri:', uri);
-      console.log('fileName:', fileName);
-      console.log('mimeType:', mimeType);
 
       const formData = new FormData();
       formData.append('file', {
@@ -58,7 +89,7 @@ const FreeSpeechScreen = ({ navigation }) => {
 
       const response = await axiosInstance.post('/api/speed/analyze-audio-file/', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          //'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`,
         },
       });
@@ -82,7 +113,6 @@ const FreeSpeechScreen = ({ navigation }) => {
 
   const handlePlayPress = async () => {
     if (recordedFilePath) {
-      // Android에서 file:// 제거 (Sound 라이브러리가 인식 못함)
       const path = Platform.OS === 'android'
         ? recordedFilePath.replace('file://', '')
         : recordedFilePath;
@@ -145,19 +175,15 @@ const FreeSpeechScreen = ({ navigation }) => {
 
       {feedback !== '' && <Text style={styles.feedbackText}>{feedback}</Text>}
 
-    {/* 평균 SPM 보기 아이콘 */}
-      <TouchableOpacity
-        style={styles.infoIconWrapper}
-        onPress={toggleAverageSpm}
-      >
+      <TouchableOpacity style={styles.infoIconWrapper} onPress={toggleAverageSpm}>
         <Text style={styles.infoIconText}>ℹ️</Text>
       </TouchableOpacity>
 
       {showAverageSpm && (
         <View style={styles.avgSpmBox}>
           <Text style={styles.avgSpmText}>5~12세 평균 SPM: 111 ~ 160</Text>
-          <Text style={styles.avgSPMText}>13~19세 평균 SPM: 141 ~ 250</Text>
-          <Text style={styles.avgSPMText}>20세 이상 평균 SPM: 181 ~ 280</Text>
+          <Text style={styles.avgSpmText}>13~19세 평균 SPM: 141 ~ 250</Text>
+          <Text style={styles.avgSpmText}>20세 이상 평균 SPM: 181 ~ 280</Text>
         </View>
       )}
 
