@@ -26,7 +26,11 @@ class User(Base):
     speech_sessions = relationship("SpeechSession", back_populates="user")
     word_favorites = relationship("WordFavorites", back_populates="user")
     speed_analyses = relationship("SpeedAnalysis", back_populates="user")
-    user_sessions = relationship("UserSession", back_populates="user")
+    user_sessions = relationship(
+        "UserSession", 
+        back_populates="user",
+        cascade="all, delete-orphan"
+        )
     age_group_rate = relationship(
         "AgeGroupSpeechRate",
         primaryjoin="User.age_group == foreign(AgeGroupSpeechRate.age_group)",
