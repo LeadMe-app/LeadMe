@@ -172,7 +172,7 @@ const WordSentence = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.endButton}
           onPress={() =>
-            navigation.navigate('WordScreen', {
+            navigation.navigate('RandomWordScreen', {
               wordId,
               favorites,
               currentIndex,
