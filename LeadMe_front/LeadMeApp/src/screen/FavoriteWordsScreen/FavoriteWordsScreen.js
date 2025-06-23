@@ -131,7 +131,9 @@ export const FavoriteWordsScreen = ({ navigation }) => {
       <View style={styles.container}>
         <Logo />
         <Text style={styles.empty}>즐겨찾기된 단어가 없습니다.</Text>
-        <BackButton style={{ position: 'absolute', bottom: 20, alignSelf: 'center' }} />
+        <View style={{aliginItems: 'center'}}>
+          <BackButton style={{ position: 'absolute', bottom: 20, alignSelf: 'center' }} />
+        </View>
       </View>
     );
   }

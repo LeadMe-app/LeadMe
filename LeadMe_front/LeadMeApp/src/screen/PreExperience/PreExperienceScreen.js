@@ -25,6 +25,8 @@ const PreExperienceScreen = ({ navigation }) => {
   const [speechSpeed, setSpeechSpeed] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [soundInstance, setSoundInstance] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // “평균 SPM 보기” 토글 상태
   const [showAverageSpm, setShowAverageSpm] = useState(false);
@@ -102,7 +104,7 @@ const PreExperienceScreen = ({ navigation }) => {
       // response.data에 spm, feedback, speed_category 등이 있다고 가정
       setSpeechSpeed(response.data.spm);
       setFeedback(
-        response.data.feedback || `발화 속도 등급 ${response.data.speed_category}`
+        response.data.feedback 
       );
     } catch (error) {
       console.error('사전 체험 서버 업로드/분석 실패:', error);
@@ -116,6 +118,15 @@ const PreExperienceScreen = ({ navigation }) => {
   const handlePlayPress = () => {
     if (!recordedFilePath) return;
 
+    // 재생 중이면 중지
+    if (isPlaying && soundInstance) {
+      soundInstance.stop(() => {
+        setIsPlaying(false);
+        soundInstance.release();
+        setSoundInstance(null);
+      });
+      return;
+    }
     // Android에서는 file://을 제거해야 Sound가 재생 가능
     const path =
       Platform.OS === 'android'
@@ -129,13 +140,19 @@ const PreExperienceScreen = ({ navigation }) => {
         console.error('사전 체험 재생 초기화 실패:', error);
         return;
       }
+      setSoundInstance(sound);
+      setIsPlaying(true);
+
       sound.play((success) => {
+        setIsPlaying(false);
+        sound.release();
+        setSoundInstance(null);
+
         if (success) {
           console.log('사전 체험 재생 완료');
         } else {
           console.log('사전 체험 재생 중 오류');
         }
-        sound.release();
       });
     });
   };
@@ -184,7 +201,9 @@ const PreExperienceScreen = ({ navigation }) => {
             onPress={handlePlayPress}
           >
             <SpeakerIcon width={70} height={70} />
-            <Text style={styles.buttonText}>재생</Text>
+            <Text style={styles.buttonText}>
+              {isPlaying? '정지' : '재생'}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -216,8 +235,8 @@ const PreExperienceScreen = ({ navigation }) => {
       {showAverageSpm && (
         <View style={styles.avgSpmBox}>
           <Text style={styles.avgSpmText}>5~12세 평균 SPM: 111 ~ 160</Text>
-          <Text style={styles.avgSPMText}>13~19세 평균 SPM: 141 ~ 250</Text>
-          <Text style={styles.avgSPMText}>20세 이상 평균 SPM: 181 ~ 280</Text>
+          <Text style={styles.avgSpmText}>13~19세 평균 SPM: 141 ~ 250</Text>
+          <Text style={styles.avgSpmText}>20세 이상 평균 SPM: 181 ~ 280</Text>
         </View>
       )}
 

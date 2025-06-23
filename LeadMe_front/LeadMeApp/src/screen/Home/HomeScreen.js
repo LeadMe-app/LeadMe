@@ -31,10 +31,16 @@ const HomeScreen = ({ navigation }) => {
         return true;
       };
 
-      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      const loadUserName = async () => {
+      const storedUsername = await AsyncStorage.getItem('username');
+      if (storedUsername) setUsername(storedUsername);
+    };
 
-      return () => subscription.remove(); // ✅ 최신 방식
-    }, [])
+    loadUserName(); // ✅ 포커스될 때마다 username 업데이트
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [])
   );
 
 

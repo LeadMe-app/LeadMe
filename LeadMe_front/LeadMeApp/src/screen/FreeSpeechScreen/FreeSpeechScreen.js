@@ -24,7 +24,10 @@ const FreeSpeechScreen = ({ navigation }) => {
   const [feedback, setFeedback] = useState('');
   const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [showAverageSpm, setShowAverageSpm] = useState(false);
-  
+  const [isUploading, setIsUploading] = useState(false);
+  const [soundInstance, setSoundInstance] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const handleRecordPress = async () => {
     setIsRecording(true);
     setSpeechSpeed(null);
@@ -66,6 +69,7 @@ const FreeSpeechScreen = ({ navigation }) => {
 
   const sendRecordingToServer = async (filePath) => {
     try {
+      setIsUploading(true);
       const uri = Platform.OS === 'android' ? `file://${filePath}` : filePath;
 
       const mimeType = 'audio/m4a';
@@ -101,31 +105,48 @@ const FreeSpeechScreen = ({ navigation }) => {
       } else {
         console.log('오류 발생:', error.message);
       }
+    }finally{
+      setIsUploading(false);
     }
   };
 
   const handlePlayPress = async () => {
-    if (recordedFilePath) {
-      const path = Platform.OS === 'android'
-        ? recordedFilePath.replace('file://', '')
-        : recordedFilePath;
+    if (!recordedFilePath) return;
 
-      console.log('재생할 경로:', path);
-
-      const sound = new Sound(path, '', (error) => {
-        if (error) {
-          console.error('재생 초기화 실패:', error);
-          return;
-        }
-        sound.play((success) => {
-          if (success) {
-            console.log('재생 완료');
-          } else {
-            console.log('재생 중 오류 발생');
-          }
-        });
+    // 재생 중이면 중지
+    if (isPlaying && soundInstance) {
+      soundInstance.stop(() => {
+        setIsPlaying(false);
+        soundInstance.release();
+        setSoundInstance(null);
       });
+      return;
     }
+    
+    const path = Platform.OS === 'android'
+    ? recordedFilePath.replace('file://', '')
+    : recordedFilePath;
+
+    const sound = new Sound(path, '', (error) => {
+      if (error) {
+        console.error('재생 초기화 실패:', error);
+        return;
+      }
+      setSoundInstance(sound);
+      setIsPlaying(true);
+
+      sound.play((success) => {
+        setIsPlaying(false);
+        sound.release();
+        setSoundInstance(null);
+
+        if (success) {
+          console.log('재생 완료');
+        } else {
+          console.log('재생 중 오류 발생');
+        }
+      });
+    });
   };
 
   const toggleAverageSpm = () => {
@@ -141,13 +162,17 @@ const FreeSpeechScreen = ({ navigation }) => {
           <>
             <TouchableOpacity onPress={handleRecordPress}>
               <Microphone width={70} height={70} />
-              <Text style={styles.iconText}>녹음</Text>
+              <Text style={styles.iconText}>
+                {isUploading? '분석 중' : '녹음'}
+              </Text>
             </TouchableOpacity>
 
             {recordedFilePath && (
               <TouchableOpacity onPress={handlePlayPress}>
                 <Speaker width={80} height={80} />
-                <Text style={styles.iconText}>재생</Text>
+                <Text style={styles.iconText}>
+                  {isPlaying? '정지' : '재생'}
+                </Text>
               </TouchableOpacity>
             )}
           </>

@@ -30,8 +30,9 @@ const SentenceSpeech = ({ navigation }) => {
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [ageGroup, setAgeGroup] = useState('20세 이상');
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isManualRecording, setIsManualRecording] = useState(false); // 
-  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [soundInstance, setSoundInstance] = useState(null);
+
   const intervalRef = useRef(null);
   const audioRecorderPlayer = useRef(null);
 
@@ -142,28 +143,45 @@ const SentenceSpeech = ({ navigation }) => {
   };
 
   const handlePlayPress = async () => {
-    if (recordedPath) {
-      const path =
-        Platform.OS === 'android'
-          ? recordedPath.replace('file://', '')
-          : recordedPath;
-      console.log('재생할 경로', path);
+    if (!recordedPath) return;
 
-      const sound = new Sound(path, '', (error) => {
-        if (error) {
-          console.log('재생 초기화 실패', error);
-          return;
-        }
-        sound.play((success) => {
-          if (success) {
-            console.log('재생 완료');
-          } else {
-            console.log('재생 중 오류 발생');
-          }
-        });
+    // 재생 중이면 정지
+    if (isPlaying && soundInstance) {
+      soundInstance.stop(() => {
+        setIsPlaying(false);
+        soundInstance.release();
+        setSoundInstance(null);
       });
+      return;
     }
+
+    const path = Platform.OS === 'android'
+      ? recordedPath.replace('file://', '')
+      : recordedPath;
+
+    const sound = new Sound(path, '', (error) => {
+      if (error) {
+        console.log('재생 초기화 실패', error);
+        return;
+      }
+
+      setSoundInstance(sound);
+      setIsPlaying(true);
+
+      sound.play((success) => {
+        setIsPlaying(false);
+        sound.release();
+        setSoundInstance(null);
+
+        if (success) {
+          console.log('재생 완료');
+        } else {
+          console.log('재생 중 오류 발생');
+        }
+      });
+    });
   };
+
 
   // 문장 불러오기
   const fetchSentence = async () => {
@@ -346,7 +364,7 @@ const SentenceSpeech = ({ navigation }) => {
 
         <TouchableOpacity onPress={handlePlayPress} style={styles.iconWithLabel}>
           <Play width={50} height={50} />
-          <Text style={styles.iconLabel}>재생</Text>
+          <Text style={styles.iconLabel}>{isPlaying ? '정지' : '재생'}</Text>
         </TouchableOpacity>
       </View>
       <View style={{ marginTop : '60' }}>

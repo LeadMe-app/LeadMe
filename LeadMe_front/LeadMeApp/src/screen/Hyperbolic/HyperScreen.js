@@ -14,10 +14,12 @@ import BackButton from '../../components/BackButton';
 import Microphone from '../../icons/microphone_icons.svg';
 import Stop from '../../icons/stop_icons.svg';
 import Speaker from '../../icons/Speaker_icons.svg';
+import HyperModal from '../../components/HyperModal';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const HyperScreen = () => {
+  const [modalVisible, setModalVisible] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -219,6 +221,21 @@ const HyperScreen = () => {
           />
         </View>
       )}
+      <View style={{ marginTop : '60' }}>
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          style={{
+            backgroundColor: '#F8D7A9',
+            paddingHorizontal: 15,
+            paddingVertical: 10,
+            borderRadius: 6,
+          }}
+        >
+          <Text style={{ fontWeight: '500' }}>사용방법</Text>
+        </TouchableOpacity>
+      </View>
+      {/* 분리한 모달 컴포넌트 */}
+      <HyperModal visible={modalVisible} onClose={() => setModalVisible(false)} />
 
       <BackButton />
     </ScrollView>
