@@ -15,13 +15,13 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: COLORS.boxShadow,
     elevation: 4,
-    marginBottom: 30,
+    marginBottom: 15,
   },
   optionTitle: {
+    fontWeight: 'bold',
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.textPrimary, // 제목 텍스트 색상
-    marginBottom: 8,
   },
   optionSubtitle: {
     fontSize: 14,

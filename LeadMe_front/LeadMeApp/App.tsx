@@ -2,6 +2,7 @@ import React, {useEffect} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BackHandler } from 'react-native';
+import {navigationRef} from './src/config/axiosInstance';
 import SignUpScreen from './src/screen/SignUp/SignUpScreen';
 import LoginScreen from './src/screen/Login/LoginScreen';
 import FindIDScreen from './src/screen/FindID/FindIDScreen';
@@ -21,6 +22,7 @@ import {FavoriteProvider, FavoriteWordsScreen} from './src/screen/FavoriteWordsS
 import RandomWordScreen from './src/screen/RandomWordScreen/RandomWordScreen';
 import SpeedListScreen from './src/screen/SpeedList/SpeedListScreen';
 import PreExperience from './src/screen/PreExperience/PreExperienceScreen';
+import HyperScreen from './src/screen/Hyperbolic/HyperScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,7 +42,7 @@ export default function App() {
   }, []);
   return (
   <FavoriteProvider>
-    <NavigationContainer>
+    <NavigationContainer ref = {navigationRef}>
       <Stack.Navigator initialRouteName="Login">
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
@@ -60,7 +62,8 @@ export default function App() {
         <Stack.Screen name="FavoriteWordsScreen" component={FavoriteWordsScreen} options={{headerShown: false}} />
         <Stack.Screen name="RandomWordScreen" component={RandomWordScreen} options={{headerShown: false}} />
         <Stack.Screen name="SpeedListScreen" component={SpeedListScreen} options={{headerShown: false}} />
-        <Stack.Screen name="PreExperience" component={PreExperience} options={{headerShown: false}} />        
+        <Stack.Screen name="PreExperience" component={PreExperience} options={{headerShown: false}} />    
+        <Stack.Screen name="HyperScreen" component={HyperScreen} options={{headerShown:false}} />    
       </Stack.Navigator>
     </NavigationContainer>
   </FavoriteProvider>

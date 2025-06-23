@@ -1,20 +1,22 @@
 import {StyleSheet} from 'react-native';
-import {COLORS} from '../../styles/colors';
+import {COLORS} from "../../styles/colors";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF8F0',
+    backgroundColor: COLORS.background,
     alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    justifyContent: 'center',
+    padding: 20,
   },
   // 버튼을 가로로 배치
   buttonRow: {
-    flexDirection: 'row',            // 가로 정렬
-    marginTop: 40,
-    justifyContent: 'space-evenly',  // 버튼 사이 간격 균등 배치
+    flexDirection: 'row', // 가로 방향 정렬
+    justifyContent: 'center',
     alignItems: 'center',
-    width: '80%',                    // 부모 너비의 80% 차지
+    marginTop: '10%',
+    marginBottom: 30,
+    gap: 50,                   // 부모 너비의 80% 차지
   },
   buttonWrapper: {
     alignItems: 'center',

@@ -45,6 +45,14 @@ const SelectSpeechTypeScreen = ({ navigation }) => {
         <Text style={styles.optionSubtitle}>제공된 문장을 따라 읽습니다. 발화 속도 조절 연습</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.optionBox, { backgroundColor: '#D6C3FF' }]}
+        onPress={() => navigation.navigate('HyperScreen')}
+      >
+        <Text style={styles.optionTitle}>음성 피로도 분석</Text>
+        <Text style={styles.optionSubtitle}>최소 1분 이상의 발화를 필요로 합니다.</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
         <Text style={styles.backText}>뒤로 가기</Text>
       </TouchableOpacity>

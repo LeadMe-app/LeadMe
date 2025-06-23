@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
-import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import AudioRecorderPlayer, {
+  AudioEncoderAndroidType,
+  AudioSourceAndroidType,
+  OutputFormatAndroidType,
+} from 'react-native-audio-recorder-player';
 import Sound from 'react-native-sound';
+import RNFetchBlob from 'rn-fetch-blob'; // 추가
 import axiosInstance from '../../config/axiosInstance';
 import { styles } from './styles';
 import Logo from '../../components/Logo';
@@ -19,33 +24,56 @@ const FreeSpeechScreen = ({ navigation }) => {
   const [feedback, setFeedback] = useState('');
   const [recordedFilePath, setRecordedFilePath] = useState(null);
   const [showAverageSpm, setShowAverageSpm] = useState(false);
-  
+  const [isUploading, setIsUploading] = useState(false);
+  const [soundInstance, setSoundInstance] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const handleRecordPress = async () => {
     setIsRecording(true);
-    const result = await audioRecorderPlayer.startRecorder();
-    setRecordedFilePath(result);
-    console.log('녹음 시작:', result); // 눌렀을때 속도, 피드백 초기화
+    setSpeechSpeed(null);
+    setFeedback('');
+    
+    try {
+      const dirs = RNFetchBlob.fs.dirs;
+      const path = Platform.select({
+        android: `${dirs.CacheDir}/recording.m4a`,
+      });
+
+      const audioSet = {
+        AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
+        AudioSourceAndroid: AudioSourceAndroidType.MIC,
+        OutputFormatAndroid: OutputFormatAndroidType.MPEG_4,
+      };
+
+      const result = await audioRecorderPlayer.startRecorder(path, audioSet);
+      setRecordedFilePath(result);
+      console.log('녹음 시작:', result);
+    } catch (error) {
+      console.error('녹음 오류:', error);
+      setIsRecording(false);
+    }
   };
 
   const handleStopPress = async () => {
-    const result = await audioRecorderPlayer.stopRecorder();
-    setIsRecording(false);
-    console.log('녹음 종료:', result);
-    setRecordedFilePath(result);
-    await sendRecordingToServer(result);
+    try {
+      const result = await audioRecorderPlayer.stopRecorder();
+      setIsRecording(false);
+      setRecordedFilePath(result);
+      console.log('녹음 종료:', result);
+      await sendRecordingToServer(result);
+    } catch (error) {
+      console.error('정지 오류:', error);
+      setIsRecording(false);
+    }
   };
 
   const sendRecordingToServer = async (filePath) => {
     try {
+      setIsUploading(true);
       const uri = Platform.OS === 'android' ? `file://${filePath}` : filePath;
+
       const mimeType = 'audio/m4a';
       const fileName = 'recording.m4a';
-
-      console.log('업로드 준비');
-      console.log('filePath:', filePath);
-      console.log('uri:', uri);
-      console.log('fileName:', fileName);
-      console.log('mimeType:', mimeType);
 
       const formData = new FormData();
       formData.append('file', {
@@ -58,7 +86,7 @@ const FreeSpeechScreen = ({ navigation }) => {
 
       const response = await axiosInstance.post('/api/speed/analyze-audio-file/', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'multipart/form-data', //여기서는 이게 없으면 오류 
           'Authorization': `Bearer ${token}`,
         },
       });
@@ -77,32 +105,48 @@ const FreeSpeechScreen = ({ navigation }) => {
       } else {
         console.log('오류 발생:', error.message);
       }
+    }finally{
+      setIsUploading(false);
     }
   };
 
   const handlePlayPress = async () => {
-    if (recordedFilePath) {
-      // Android에서 file:// 제거 (Sound 라이브러리가 인식 못함)
-      const path = Platform.OS === 'android'
-        ? recordedFilePath.replace('file://', '')
-        : recordedFilePath;
+    if (!recordedFilePath) return;
 
-      console.log('재생할 경로:', path);
-
-      const sound = new Sound(path, '', (error) => {
-        if (error) {
-          console.error('재생 초기화 실패:', error);
-          return;
-        }
-        sound.play((success) => {
-          if (success) {
-            console.log('재생 완료');
-          } else {
-            console.log('재생 중 오류 발생');
-          }
-        });
+    // 재생 중이면 중지
+    if (isPlaying && soundInstance) {
+      soundInstance.stop(() => {
+        setIsPlaying(false);
+        soundInstance.release();
+        setSoundInstance(null);
       });
+      return;
     }
+    
+    const path = Platform.OS === 'android'
+    ? recordedFilePath.replace('file://', '')
+    : recordedFilePath;
+
+    const sound = new Sound(path, '', (error) => {
+      if (error) {
+        console.error('재생 초기화 실패:', error);
+        return;
+      }
+      setSoundInstance(sound);
+      setIsPlaying(true);
+
+      sound.play((success) => {
+        setIsPlaying(false);
+        sound.release();
+        setSoundInstance(null);
+
+        if (success) {
+          console.log('재생 완료');
+        } else {
+          console.log('재생 중 오류 발생');
+        }
+      });
+    });
   };
 
   const toggleAverageSpm = () => {
@@ -118,13 +162,17 @@ const FreeSpeechScreen = ({ navigation }) => {
           <>
             <TouchableOpacity onPress={handleRecordPress}>
               <Microphone width={70} height={70} />
-              <Text style={styles.iconText}>녹음</Text>
+              <Text style={styles.iconText}>
+                {isUploading? '분석 중' : '녹음'}
+              </Text>
             </TouchableOpacity>
 
             {recordedFilePath && (
               <TouchableOpacity onPress={handlePlayPress}>
                 <Speaker width={80} height={80} />
-                <Text style={styles.iconText}>재생</Text>
+                <Text style={styles.iconText}>
+                  {isPlaying? '정지' : '재생'}
+                </Text>
               </TouchableOpacity>
             )}
           </>
@@ -145,19 +193,15 @@ const FreeSpeechScreen = ({ navigation }) => {
 
       {feedback !== '' && <Text style={styles.feedbackText}>{feedback}</Text>}
 
-    {/* 평균 SPM 보기 아이콘 */}
-      <TouchableOpacity
-        style={styles.infoIconWrapper}
-        onPress={toggleAverageSpm}
-      >
+      <TouchableOpacity style={styles.infoIconWrapper} onPress={toggleAverageSpm}>
         <Text style={styles.infoIconText}>ℹ️</Text>
       </TouchableOpacity>
 
       {showAverageSpm && (
         <View style={styles.avgSpmBox}>
           <Text style={styles.avgSpmText}>5~12세 평균 SPM: 111 ~ 160</Text>
-          <Text style={styles.avgSPMText}>13~19세 평균 SPM: 141 ~ 250</Text>
-          <Text style={styles.avgSPMText}>20세 이상 평균 SPM: 181 ~ 280</Text>
+          <Text style={styles.avgSpmText}>13~19세 평균 SPM: 141 ~ 250</Text>
+          <Text style={styles.avgSpmText}>20세 이상 평균 SPM: 181 ~ 280</Text>
         </View>
       )}
 
