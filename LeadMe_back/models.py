@@ -24,8 +24,8 @@ class User(Base):
 
     # 관계 설정
     speech_sessions = relationship("SpeechSession", back_populates="user")
-    word_favorites = relationship("WordFavorites", back_populates="user")
-    speed_analyses = relationship("SpeedAnalysis", back_populates="user")
+    word_favorites = relationship("WordFavorites", back_populates="user", cascade="all, delete-orphan")
+    speed_analyses = relationship("SpeedAnalysis", back_populates="user", cascade="all, delete-orphan")
     user_sessions = relationship(
         "UserSession", 
         back_populates="user",
