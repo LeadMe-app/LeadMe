@@ -231,7 +231,7 @@ const HyperScreen = () => {
             borderRadius: 6,
           }}
         >
-          <Text style={{ fontWeight: '500' }}>사용방법</Text>
+          <Text style={{ fontWeight: '500' }}>그래프 설명</Text>
         </TouchableOpacity>
       </View>
       {/* 분리한 모달 컴포넌트 */}

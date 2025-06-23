@@ -37,6 +37,8 @@ const UnSubscribeModal = ({ visible, onClose, navigation={navigation} }) => {
 
     } catch (error) {
       console.error('회원탈퇴 실패:', error);
+      console.log('보내는 토큰:', token);
+
       Alert.alert('오류', '회원탈퇴에 실패했습니다.');
     }
   };
